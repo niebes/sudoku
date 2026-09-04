@@ -37,6 +37,9 @@ enum class Technique {
     /** Two strong links on one value, joined so that one of their far ends must hold it. */
     TURBOT_FISH,
 
+    /** A two-candidate pivot forced one of two pincers to take the value they share. */
+    XY_WING,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }

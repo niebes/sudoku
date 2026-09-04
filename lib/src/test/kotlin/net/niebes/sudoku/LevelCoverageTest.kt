@@ -43,7 +43,7 @@ internal class LevelCoverageTest {
         }
 
         // A floor, not a target: a new technique should be free to raise it.
-        assertThat(withoutGuessing).isGreaterThanOrEqualTo(20)
+        assertThat(withoutGuessing).isGreaterThanOrEqualTo(23)
     }
 
     @Test
@@ -58,26 +58,14 @@ internal class LevelCoverageTest {
 
     @Test
     fun everyImplementedTechniqueEarnsItsPlaceOnSomePuzzle() {
-        val used = Puzzles.all.flatMapTo(mutableSetOf()) { puzzle ->
+        val used = (Puzzles.all + GeneratedPuzzles.all).flatMapTo(mutableSetOf()) { puzzle ->
             RecordingDeductionListener()
                 .also { SudokuSolver(it).solve(puzzle.field()) }
                 .techniquesUsed()
         }
 
-        assertThat(used).containsAll(
-            listOf(
-                Technique.FULL_HOUSE,
-                Technique.NAKED_SINGLE,
-                Technique.HIDDEN_SINGLE,
-                Technique.PEER_ELIMINATION,
-                Technique.POINTING,
-                Technique.CLAIMING,
-                Technique.NAKED_SUBSET,
-                Technique.HIDDEN_SUBSET,
-                Technique.BASIC_FISH,
-                Technique.TURBOT_FISH
-            )
-        )
+        // A technique that stops firing anywhere has become dead code, and this says so.
+        assertThat(used).containsAll(Technique.entries - Technique.GUESS)
     }
 
     @Test
@@ -95,7 +83,8 @@ internal class LevelCoverageTest {
             "NakedSubsetEliminator",        // level 3
             "HiddenSubsetEliminator",       // level 3
             "BasicFishEliminator",          // level 4
-            "TurbotFishEliminator"          // level 5
+            "TurbotFishEliminator",         // level 5
+            "XyWingEliminator"              // level 5
         )
     }
 }
