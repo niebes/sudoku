@@ -99,10 +99,11 @@ as ordinary values.
 `docs/solving-techniques.md` is a standalone levelled reference for every non-brute-force technique,
 with worked examples, written independently of this codebase. Read it first. Levels 1–8 are implemented apart
 from ALS, Sue de Coq and the exotic fish; level 9 is what `search` already does. Simple colouring
-and finned fish are implemented and tested but deliberately **not** in the
-chain. Turbot fish covers short strong-link chains two levels before colouring; AIC at nine links
-covers everything finned fish finds. Both were measured in and out — neither changes how many
-puzzles need search.
+, finned fish and ALS-XZ are implemented and tested but deliberately **not**
+in the chain. Turbot fish covers short strong-link chains two levels before colouring; AIC at nine
+links covers what the other two find. All three were measured in and out, and none changes how many
+puzzles need search or how many guesses are made — so none earns a place. Measure before adding a
+technique to the chain, and again before believing it helped.
 
 Implement `EliminationTechnique` and insert it into the default chain in cost order. `eliminations(field)`
 must read only the field it is handed; the batch is applied afterwards, so a technique cannot observe

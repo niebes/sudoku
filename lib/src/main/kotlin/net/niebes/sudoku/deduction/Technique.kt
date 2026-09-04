@@ -64,6 +64,9 @@ enum class Technique {
     /** Every cell but one was down to a pair; the odd one out holds the candidate that escapes the grave. */
     BUG_PLUS_ONE,
 
+    /** Two almost locked sets, one of which must lock, so a value they share has to be inside one of them. */
+    ALS_XZ,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }
