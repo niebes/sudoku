@@ -61,6 +61,9 @@ enum class Technique {
     /** Four corners holding one pair would give the puzzle two solutions, so the odd corner cannot join them. */
     UNIQUE_RECTANGLE,
 
+    /** Every cell but one was down to a pair; the odd one out holds the candidate that escapes the grave. */
+    BUG_PLUS_ONE,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }

@@ -8,6 +8,7 @@ import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.UnsolvedCell
 import net.niebes.sudoku.technique.AicEliminator
 import net.niebes.sudoku.technique.BasicFishEliminator
+import net.niebes.sudoku.technique.BugPlusOneEliminator
 import net.niebes.sudoku.technique.ClaimingEliminator
 import net.niebes.sudoku.technique.EmptyRectangleEliminator
 import net.niebes.sudoku.technique.FieldProcessor
@@ -51,6 +52,7 @@ class SudokuSolver(
         WWingEliminator(),
         EmptyRectangleEliminator(),
         UniqueRectangleEliminator(),
+        BugPlusOneEliminator(),
         AicEliminator(),
         FinnedFishEliminator()
     ), deductions)

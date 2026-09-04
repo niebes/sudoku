@@ -31,6 +31,14 @@ internal class FieldBuilder {
         columns.forEach { candidates(row, it, *values) }
     }
 
+    /** Fills every cell from a compact solution string except those left [open]. */
+    fun solvedFrom(compact: String, open: Set<CellPosition>) = apply {
+        compact.forEachIndexed { index, digit ->
+            val position = CellPosition.fromIndex(index)
+            if (position !in open) solved(position.row, position.column, digit - '0')
+        }
+    }
+
     fun build(): Field = Field(cells.values)
 }
 
