@@ -47,6 +47,13 @@ class Field(cells: Collection<Cell>) {
         if (places.size != 2) null else ConjugatePair(value, house, places[0], places[1])
     }
 
+    /**
+     * Cells that see both positions. A technique that proves "one of these two holds the value"
+     * eliminates it exactly here, so it is worth taking from the peer tables rather than scanning.
+     */
+    fun seenByBoth(a: CellPosition, b: CellPosition): List<Cell> =
+        PEERS[a.index].filter { it != b.index && sees(b, CellPosition.fromIndex(it)) }.map { cells[it] }
+
     /** Values already placed in any house of [position], and so unavailable to it. */
     fun solvedPeers(position: CellPosition): Candidates {
         var placed = Candidates.NONE

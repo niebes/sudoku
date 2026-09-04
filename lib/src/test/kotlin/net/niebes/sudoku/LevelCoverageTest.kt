@@ -19,14 +19,11 @@ import org.junit.jupiter.api.Test
  */
 internal class LevelCoverageTest {
 
-    private val withinLevelThree = listOf(
-        Puzzles.classic, Puzzles.singlesOnly, Puzzles.needsPointing, Puzzles.needsSubsets
-    )
-    private val beyondLevelThree = listOf(Puzzles.needsChains, Puzzles.minimalClues)
-
     @Test
-    fun levelsOneToThreeFinishTheirPuzzlesWithoutGuessing() {
-        withinLevelThree.forEach { puzzle ->
+    fun everyNamedPuzzleNowSolvesWithoutGuessing() {
+        // All six, including the 18-clue one and the 17-clue one at the proven minimum. Both of
+        // those needed search until fish and turbot fish landed.
+        Puzzles.all.forEach { puzzle ->
             val recorder = RecordingDeductionListener()
 
             val result = SudokuSolver(recorder).propagate(puzzle.field())
@@ -40,15 +37,21 @@ internal class LevelCoverageTest {
     }
 
     @Test
-    fun puzzlesNeedingChainsStillStallAndFallToSearch() {
-        beyondLevelThree.forEach { puzzle ->
-            assertThat(SudokuSolver().propagate(puzzle.field()))
-                .describedAs(puzzle.givens)
-                .isInstanceOf(Stalled::class.java)
+    fun propagationAloneCarriesMostOfTheGeneratedCorpus() {
+        val withoutGuessing = GeneratedPuzzles.all.count {
+            SudokuSolver().propagate(it.field()) is Solved
+        }
 
+        // A floor, not a target: a new technique should be free to raise it.
+        assertThat(withoutGuessing).isGreaterThanOrEqualTo(20)
+    }
+
+    @Test
+    fun searchStillFinishesWhatPropagationCannot() {
+        GeneratedPuzzles.all.forEach { puzzle ->
             val result = SudokuSolver().solve(puzzle.field())
 
-            assertThat(result).isInstanceOf(Solved::class.java)
+            assertThat(result).describedAs(puzzle.givens).isInstanceOf(Solved::class.java)
             assertThat(result.field).isEqualTo(puzzle.solved())
         }
     }
@@ -71,7 +74,8 @@ internal class LevelCoverageTest {
                 Technique.CLAIMING,
                 Technique.NAKED_SUBSET,
                 Technique.HIDDEN_SUBSET,
-                Technique.BASIC_FISH
+                Technique.BASIC_FISH,
+                Technique.TURBOT_FISH
             )
         )
     }
@@ -90,7 +94,8 @@ internal class LevelCoverageTest {
             "ClaimingEliminator",           // level 2
             "NakedSubsetEliminator",        // level 3
             "HiddenSubsetEliminator",       // level 3
-            "BasicFishEliminator"           // level 4
+            "BasicFishEliminator",          // level 4
+            "TurbotFishEliminator"          // level 5
         )
     }
 }

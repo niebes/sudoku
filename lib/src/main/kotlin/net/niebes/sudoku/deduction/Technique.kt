@@ -34,6 +34,9 @@ enum class Technique {
     /** The value was confined to n lines that between them use only n crossing lines. */
     BASIC_FISH,
 
+    /** Two strong links on one value, joined so that one of their far ends must hold it. */
+    TURBOT_FISH,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }

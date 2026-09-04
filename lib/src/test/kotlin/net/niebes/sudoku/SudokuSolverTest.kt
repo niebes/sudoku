@@ -216,8 +216,10 @@ internal class SudokuSolverTest {
         assertThat(easy.deductions).isNotEmpty()
         assertThat(easy.deductions.map { it.technique }).doesNotContain(Technique.GUESS)
         assertThat(easy.guesses).isZero()
-        // The techniques in the chain do not reach this one, so search has to assume its way in.
-        assertThat(hard.guesses).isPositive()
+        // Both are reported through the listener rather than printed, and the harder puzzle simply
+        // draws on more techniques - it stopped needing search once fish and turbot fish landed.
+        assertThat(hard.techniquesUsed()).containsAll(easy.techniquesUsed())
+        assertThat(hard.deductions.size).isGreaterThan(easy.deductions.size)
     }
 
     private fun solutionEquals(input: Field, expectedSolution: Field) {

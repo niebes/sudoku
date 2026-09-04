@@ -16,6 +16,7 @@ import net.niebes.sudoku.technique.NakedSubsetEliminator
 import net.niebes.sudoku.technique.PointingEliminator
 import net.niebes.sudoku.technique.SingleCandidateMarker
 import net.niebes.sudoku.technique.SolveSingleCandidateTransformer
+import net.niebes.sudoku.technique.TurbotFishEliminator
 
 /**
  * Applies its techniques in order, cheapest level first, until the field stops changing.
@@ -36,7 +37,8 @@ class SudokuSolver(
         ClaimingEliminator(),
         NakedSubsetEliminator(),
         HiddenSubsetEliminator(),
-        BasicFishEliminator()
+        BasicFishEliminator(),
+        TurbotFishEliminator()
     ), deductions)
 
     fun solve(field: Field): SolveResult = search(field)
