@@ -23,23 +23,24 @@ internal object Explanations {
     private fun placement(d: Placement): String = when (d.technique) {
         Technique.FULL_HOUSE ->
             "${houseOfPositions(d.because + d.at) ?: "This house"} has a single empty cell left. " +
-                "Its other eight cells are filled, and the one value missing from them is ${d.value} - " +
+                "The other eight are filled, and the one value missing from them is ${d.value}, " +
                 "so ${d.at.label()} takes it."
 
         Technique.NAKED_SINGLE ->
-            "${d.at.label()} is down to one candidate: everything else has been ruled out, " +
-                "so it must be ${d.value}."
+            "${d.at.label()} has one candidate left: earlier steps crossed off everything " +
+                "but ${d.value}, so ${d.value} goes in."
 
         Technique.HIDDEN_SINGLE ->
             "In ${houseOfPositions(d.because + d.at)?.lowercase() ?: "one house"}, ${d.value} fits nowhere else: " +
-                "each of the other eight cells is either solved already or has lost ${d.value} " +
-                "as a candidate. The only cell left for it is ${d.at.label()}."
+                "every other cell there is either solved already or has lost ${d.value} from its " +
+                "pencil marks. That leaves ${d.at.label()}."
 
         Technique.GUESS ->
             "No implemented technique makes progress on this grid, so the solver assumes " +
-                "${d.at.label()} is ${d.value} - the cell with the fewest candidates left - and follows " +
-                "the consequences. This is a guess, not a deduction; a branch that had led to a " +
-                "contradiction was withdrawn, and none of its steps are shown."
+                "${d.at.label()} is ${d.value} and follows the consequences. It picked this cell " +
+                "because it has the fewest candidates left. This is a guess, not a deduction. " +
+                "When an assumption ran into a contradiction the solver withdrew it, and none of " +
+                "those steps appear here."
 
         else -> "${d.technique}: ${d.at.label()} must be ${d.value}."
     }
@@ -50,21 +51,21 @@ internal object Explanations {
         return when (d.technique) {
             Technique.PEER_ELIMINATION ->
                 "${d.at.label()} shares a row, column or box with ${cells.size.cells()} already " +
-                    "holding ${values.prose()}. A value cannot repeat within a house, " +
-                    "so ${values.thoseCandidates()} removed here."
+                    "holding ${values.prose()}. A value cannot appear twice in the same house, " +
+                    "so ${if (values.size == 1) "that mark goes" else "those marks go"}."
 
             Technique.POINTING -> {
                 val v = values.single()
-                "Inside ${boxOf(cells)}, $v fits only in the highlighted cells - and they all lie on " +
-                    "${lineOf(cells)}. Wherever the box's $v lands, it uses up that line's $v, " +
-                    "so $v goes nowhere else on the line, including ${d.at.label()}."
+                "Inside ${boxOf(cells)}, $v fits only in the highlighted cells, which all lie on " +
+                    "${lineOf(cells)}. The box has to put its $v in one of them, so the rest of " +
+                    "the line, ${d.at.label()} included, cannot hold one."
             }
 
             Technique.CLAIMING -> {
                 val v = values.single()
-                "Along ${lineOf(cells)}, $v fits only in the highlighted cells - all inside " +
-                    "${boxOf(cells)}. The line must put its $v in one of them, which uses up the " +
-                    "box's $v - so $v goes nowhere else in the box, including ${d.at.label()}."
+                "Along ${lineOf(cells)}, $v fits only in the highlighted cells, all inside " +
+                    "${boxOf(cells)}. The line has to put its $v in one of them, which uses up " +
+                    "the box's $v, so the rest of the box, ${d.at.label()} included, cannot hold one."
             }
 
             Technique.NAKED_SUBSET ->
@@ -75,47 +76,46 @@ internal object Explanations {
             Technique.HIDDEN_SUBSET ->
                 "In ${houseOf(cells)?.lowercase() ?: "this house"}, ${cells.size} values fit only in the " +
                     "${cells.size} highlighted cells. Those cells must hold exactly those values " +
-                    "between them, so ${values.theirOtherCandidates()} removed."
+                    "between them, so ${values.prose()} ${values.goVerb()} from ${d.at.label()}."
 
             Technique.BASIC_FISH -> {
                 val v = values.single()
                 val (base, cover) = fishOrientation(cells, CellRef.of(d.at))
                 "${fishName(cells)}: in ${cells.map { it.lineIndex(base) }.distinct().size.lines(base)}, " +
-                    "$v fits only in the highlighted cells - and they line up on the same " +
+                    "$v fits only in the highlighted cells, and they line up on the same " +
                     "${cells.map { it.lineIndex(cover) }.distinct().size.lines(cover)}. Each of those " +
-                    "${cover}s must take its $v from one of them, so $v is removed from the rest, " +
-                    "including ${d.at.label()}."
+                    "${cover}s takes its $v from one of them, so $v leaves every other cell in " +
+                    "those ${cover}s, including ${d.at.label()}."
             }
 
             Technique.TURBOT_FISH -> {
                 val v = values.single()
                 "The chain ${cells.chain()} alternates two strong links on $v, joined in the middle. " +
-                    "If ${cells.first().label()} is not $v then ${cells[1].label()} is, forcing " +
-                    "${cells[2].label()} off $v and ${cells.last().label()} onto it. Either way one " +
-                    "end of the chain holds $v, and ${d.at.label()} sees both ends."
-
+                    "If ${cells.first().label()} is not $v then ${cells[1].label()} is, which forces " +
+                    "${cells[2].label()} off $v and ${cells.last().label()} onto it. One end of the " +
+                    "chain holds $v either way, and ${d.at.label()} sees both ends."
             }
 
             Technique.XY_WING -> {
                 val v = values.single()
-                "${cells.first().label()} is the pivot, holding two candidates. Whichever it takes, " +
-                    "one of the pincers ${cells[1].label()} and ${cells[2].label()} is forced onto $v. " +
+                "${cells.first().label()} is the pivot, with two candidates. Whichever value it takes " +
+                    "forces one of the pincers ${cells[1].label()} and ${cells[2].label()} onto $v. " +
                     "${d.at.label()} sees both pincers, so it cannot be $v."
             }
 
             Technique.XYZ_WING -> {
                 val v = values.single()
                 "${cells.first().label()}, ${cells[1].label()} and ${cells[2].label()} must share out " +
-                    "three values between them, and any of the three could be the $v. One of them is: " +
-                    "${d.at.label()} sees all three, so it cannot be $v."
+                    "three values between them, and any of the three could be the $v, so one of " +
+                    "them is. ${d.at.label()} sees all three and cannot be $v."
             }
 
             Technique.W_WING -> {
                 val v = values.single()
                 "${cells.first().label()} and ${cells.last().label()} hold the same pair. The strong " +
                     "link ${cells[1].label()}-${cells[2].label()} puts its value at one end or the " +
-                    "other, forcing the pair cell it sees onto $v. So one of the pair is $v, and " +
-                    "${d.at.label()} sees both."
+                    "other, and that end forces the pair cell it sees onto $v. One of the pair is " +
+                    "$v either way, and ${d.at.label()} sees both."
             }
 
             Technique.EMPTY_RECTANGLE -> {
@@ -123,8 +123,8 @@ internal object Explanations {
                 val (link, places) = cells.takeLast(2) to cells.dropLast(2)
                 "In ${boxOf(places)}, every place for $v (highlighted) sits on one row plus one " +
                     "column. If ${d.at.label()} were $v, the strong link ${link.first().label()}-" +
-                    "${link.last().label()} would push the box's $v off both arms at once - " +
-                    "impossible, so it is not."
+                    "${link.last().label()} would push the box's $v off both arms at once, which " +
+                    "cannot happen. So ${d.at.label()} is not $v."
             }
 
             Technique.UNIQUE_RECTANGLE ->
@@ -134,35 +134,35 @@ internal object Explanations {
                     "has exactly one, so ${d.at.label()} holds neither of them."
 
             Technique.BUG_PLUS_ONE ->
-                "Every other unsolved cell is down to a pair. Taking ${values.prose()} away here " +
-                    "would leave a grid where each remaining candidate appears exactly twice in " +
-                    "every house - a pattern that never has a unique solution. This cell must hold " +
-                    "its extra candidate, so ${values.thoseCandidates()} removed."
+                "Every other unsolved cell is down to a pair. Take ${values.prose()} away here and " +
+                    "each remaining candidate would appear exactly twice in every house, a pattern " +
+                    "that never has a unique solution. This cell must keep its extra candidate, " +
+                    "so ${values.prose()} ${values.goVerb()}."
 
             Technique.AIC ->
-                if (cells.firstOrNull() == d.at)
+                if (cells.firstOrNull() == CellRef.of(d.at))
                     "A chain of alternating strong and weak links leaves ${d.at.label()} as one value " +
                         "and arrives back at it as another: ${cells.chain()}. One of those two ends " +
-                        "is true, so the cell holds one of the two chain values and " +
-                        "${values.thoseCandidates()} removed."
+                        "is true, so the cell holds one of the two chain values, and " +
+                        "${values.prose()} ${values.goVerb()}."
                 else
                     "A chain of alternating strong and weak links runs ${cells.chain()}. Whichever " +
-                        "way its first link falls, one of the chain's two ends holds " +
-                        "${values.prose()} - and ${d.at.label()} sees both ends."
+                        "way its first link falls, one of the two ends holds ${values.prose()}, " +
+                        "and ${d.at.label()} sees both ends."
 
             Technique.SIMPLE_COLOURING ->
                 "Two-colouring the strong links on ${values.prose()} traps ${d.at.label()}: whichever " +
                     "colour is true, one of the highlighted cells it sees holds the value."
 
             Technique.FINNED_FISH ->
-                "A fish on ${values.prose()} spoiled by extra candidates in one base line - the fins. " +
-                    "Either the fish is real or a fin holds the value; ${d.at.label()} loses it " +
-                    "both ways."
+                "A fish on ${values.prose()} spoiled by extra candidates in one base line, the fins. " +
+                    "Either the fish is real or a fin holds the value, and ${d.at.label()} loses " +
+                    "it both ways."
 
             Technique.ALS_XZ ->
                 "The two highlighted almost-locked sets share ${values.prose()}, and their common " +
                     "restricted value fits only one of them. Whichever set locks, it contains " +
-                    "${values.prose()} - and ${d.at.label()} sees every cell that could hold it."
+                    "${values.prose()}, and ${d.at.label()} sees every cell that could hold it."
 
             else -> "${d.technique}: ${values.prose()} cannot go at ${d.at.label()}."
         }
@@ -179,9 +179,7 @@ internal object Explanations {
         else -> dropLast(1).joinToString(", ") + " and ${last()}"
     }
 
-    private fun List<Int>.thoseCandidates() = if (size == 1) "that candidate is" else "those candidates are"
-    private fun List<Int>.theirOtherCandidates() =
-        if (size == 1) "the other candidate ${prose()} is" else "the other candidates ${prose()} are"
+    private fun List<Int>.goVerb() = if (size == 1) "goes" else "go"
 
     private fun Int.cells() = if (this == 1) "one solved cell" else "$this solved cells"
     private fun Int.lines(kind: String) = if (this == 1) "one $kind" else "$this ${kind}s"

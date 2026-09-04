@@ -131,8 +131,8 @@ function startPlayer(body) {
     banner.hidden = false;
   } else if (body.guesses > 0) {
     banner.textContent = 'This puzzle outran all twenty techniques: ' + (body.guesses === 1
-      ? 'one step is an assumption, shown honestly as a guess - watch for the amber step.'
-      : body.guesses + ' steps are assumptions, shown honestly as guesses - watch for the amber steps.');
+      ? 'one step is an assumption, shown honestly as a guess. Watch for the amber step.'
+      : body.guesses + ' steps are assumptions, shown honestly as guesses. Watch for the amber steps.');
     banner.classList.remove('bad');
     banner.hidden = false;
   } else {
@@ -183,7 +183,7 @@ function render() {
   renderCards(step);
   $('scrub').value = current;
   $('step-counter').textContent = current === 0
-    ? 'The puzzle as given - press play, or step through it'
+    ? 'The puzzle as given. Press play, or step through it'
     : 'Step ' + current + ' of ' + solve.steps.length;
   $('btn-play').textContent = playing ? '❚❚ pause' : '▶︎ play';
 }
@@ -215,7 +215,7 @@ function renderCards(step) {
     $('step-title').textContent = 'The givens';
     $('step-explanation').textContent =
       'Every empty cell starts with all nine pencil marks. Each step that follows removes marks ' +
-      'or places a value - and says why.';
+      'or places a value, and says why.';
     stepCard.classList.remove('guess-step');
     $('technique-card').hidden = true;
     return;
