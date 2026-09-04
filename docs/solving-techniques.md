@@ -45,6 +45,12 @@ Restarting from level 1 matters for two reasons. It keeps expensive searches off
 hot path, and it means the trace records *the easiest technique available at each
 step* — which is what a difficulty rating actually is.
 
+The alternative — running every level on every pass and taking the combined result —
+looks equivalent and is not. It is slower, because the expensive levels run constantly
+instead of rarely. And it destroys the rating: a jellyfish and a naked single that fire
+on the same pass are both credited, so a puzzle that singles could have finished on
+their own comes out looking like it needed a jellyfish.
+
 **A worked cascade.** One level-3 deduction paying for three level-1 placements:
 
 ```
