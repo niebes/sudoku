@@ -1,371 +1,588 @@
-# Sudoku solving techniques: a prioritised implementation plan
+# Sudoku solving techniques: a levelled reference
 
-A catalogue of every technique worth adding as a `FieldProcessor`, ordered by
-payoff-per-line-of-code, excluding brute force. Written to answer one question:
-**if we are not allowed to guess, what do we have to build?**
+Every non-brute-force technique worth knowing, ordered into levels by cost and
+payoff, with worked examples. Each level assumes the ones above it.
 
-Sources are listed at the bottom. The measurements in "What this repo's puzzles
-need" were produced against a reference implementation, not against this codebase.
+The organising idea is that solving is a **cascade**: apply the cheapest technique
+that fires, take the change it produces, and start again from level 1. Almost every
+deduction unlocks a cheaper one. Expensive techniques exist only to break a deadlock
+and hand control back to the cheap ones.
 
 ---
 
-## 1. The honest boundary
+## Notation
 
-Three facts, in tension, that shape everything below.
+Single-digit diagrams show where **one** digit may still go:
 
-**Every proper puzzle is deducible in principle.** A proper Sudoku has exactly one
-solution, so every cell's value is entailed by the givens. There is always *a* chain
-of reasoning; nothing is left to chance.
+```
+ .   that digit cannot go here
+ 5   that digit is still a candidate here
+ #   a cell taking part in the pattern
+ x   a candidate the pattern eliminates
+```
 
-**No small fixed rule set is complete.** The technique ladder is open-ended. Each
-tier below solves puzzles the tier under it cannot, and there is no point at which
-you have them all. The most credible completeness claim in the literature is
-HoDoKu's: *"Every known sudoku can be solved using only chains of various degrees of
-complexity and singles."* Note the wording — *known*, and *chains of various degrees
-of complexity*, which is not a bounded set.
+Cell-level diagrams show candidate lists: `{3,7}` means the cell is down to 3 or 7.
+
+Two words used throughout:
+
+- **House** — a row, a column, or a 3x3 box. Every cell belongs to exactly three.
+- **See** — two cells *see* each other if they share a house. Every cell sees 20 others.
+
+---
+
+## The solving loop
+
+```
+  repeat:
+      for level in 1, 2, 3, ... :
+          if a technique at this level changes anything:
+              apply it and restart from level 1
+      if nothing changed at any level:
+          stop - the puzzle is beyond the implemented techniques
+```
+
+Restarting from level 1 matters for two reasons. It keeps expensive searches off the
+hot path, and it means the trace records *the easiest technique available at each
+step* — which is what a difficulty rating actually is.
+
+**A worked cascade.** One level-3 deduction paying for three level-1 placements:
+
+```
+row:  {1,2}  {1,2}  {1,2,5}  {5,8,9}  {5,9}  4  7  3  6
+```
+
+Level 3 spots that two cells both read `{1,2}`. Between them they use up 1 and 2, so
+no other cell in the row can hold either — the third cell drops to `{5}`:
+
+```
+row:  {1,2}  {1,2}    {5}    {5,8,9}  {5,9}  4  7  3  6
+```
+
+Now hand back to level 1, which places that 5. Removing it from the rest of the row
+leaves `{8,9}` and `{9}` — another naked single. Place the 9, remove it, and `{8}`
+falls out after it:
+
+```
+row:  {1,2}  {1,2}     5        8       9    4  7  3  6
+```
+
+Three cells placed off the back of one pair. The remaining `{1,2}` needs a column or
+box to settle it — which is the normal way a cascade ends: not with the house
+finished, but with the cheap techniques exhausted and progress made elsewhere.
+
+---
+
+## The honest boundary
+
+Three facts in tension.
+
+**Every proper puzzle is deducible.** A proper Sudoku has exactly one solution, so
+every cell is entailed by the givens. Nothing is ever genuinely down to chance.
+
+**No fixed rule set is complete.** The ladder is open-ended — each level solves
+puzzles the level above cannot, and there is no point at which you have them all. The
+most credible completeness claim in the literature is that *every known sudoku can be
+solved using only chains of various degrees of complexity and singles*. Note the
+wording: **known**, and **of various degrees of complexity**, which is not a bounded
+set.
 
 **The top of the ladder is search wearing a proof coat.** A forcing chain picks a
-bivalue cell, follows both branches, and concludes from the outcome — if both
-branches place the same digit somewhere, it is true; if one branch contradicts, it is
-false. That is exactly what `SudokuSolver.search` does. The difference is bookkeeping:
-a forcing chain converts a branch's outcome into an elimination in the original grid
+cell with two candidates, follows both branches, and concludes from the outcome: if
+both branches place the same digit somewhere, it is true; if one branch contradicts,
+it is false. Structurally that is trial and error. It differs from guessing in its
+bookkeeping — it converts a branch's outcome into an elimination in the original grid
 and never keeps a tentative state, so it yields certainty rather than a trial that
-might be abandoned. The puzzle community classifies these as logic, not guessing, and
-HoDoKu is explicit that none of its last-resort methods "qualify as guessing".
+might be abandoned. By convention these count as logic, not guessing.
 
-So the answer to "can we drop `search`?" depends on what *guess* means:
+So "solve without guessing" resolves differently depending on what is meant:
 
-| Reading of "no guessing" | Achievable? |
+| Reading | Achievable? |
 |---|---|
-| No abandoned branches; every deduction is a certainty when made | Yes, for any proper puzzle — but only by climbing as far as forcing chains |
-| No `Field.assign` of an unproven value anywhere in the implementation | **No.** Nishio and forcing chains assign internally; they just don't keep the result |
-| Solve the puzzles people actually publish without branching | Yes, comfortably, with tiers 1–5 below |
+| Every deduction is certain when made; no branch is ever abandoned | Yes for any proper puzzle — but only by climbing as far as forcing chains |
+| No tentative value is ever written into a cell, even internally | **No.** Forcing chains and Nishio assign internally; they just discard the branch |
+| Finish the puzzles people actually publish without branching | Yes, comfortably, with levels 1–5 |
 
-**Recommendation:** build tiers 1–5, keep `search` as the backstop, and use
-`RecordingDeductionListener.guesses == 0` as the regression test that a new technique
-earned its place. Do not aim for a search-free solver; aim for one where search never
-fires on a real puzzle.
+**A practical target:** implement levels 1–5, keep a backstop, and aim for a solver
+where the backstop never fires on a real puzzle.
 
 ---
 
-## 2. What this repo's puzzles need
+# Level 1 — Singles
 
-Measured with a reference implementation of tiers 0–5, verified sound at every step
-(no technique ever eliminated a candidate that appears in the true solution):
+The only techniques that *place* digits. Everything below merely eliminates
+candidates, and does so to create work for this level.
 
-| Puzzle | Givens | Minimum tier that finishes it |
-|---|---|---|
-| `testIsSolvable` | 30 | singles |
-| `compact` (parser test) | 30 | singles |
-| `unsolved` | 22 | singles + locked candidates |
-| `round15` | 24 | singles + locked candidates + subsets |
-| `unsolved2` | 18 | stalls at 53/81 — needs chain-strength techniques |
-| `unsolved3` | 17 | stalls at 59/81 — needs chain-strength techniques |
+### Full house / last digit
 
-`unsolved3` has 17 givens, the proven minimum for a uniquely-solvable Sudoku. Puzzles
-at that clue count essentially always require chains. Treat `unsolved2` and
-`unsolved3` as the long-term targets, not the next milestone.
+A house with exactly one unsolved cell. The cheapest check in the game.
 
-**Locked candidates alone would take us from one puzzle solved without guessing to
-three.** That is the single highest-value processor to write next.
+```
+row:  4  1  7  9  {6}  2  8  5  3      ->  the gap must be 6
+```
+
+### Naked single
+
+A cell down to one candidate.
+
+```
+{5}  ->  5
+```
+
+### Hidden single
+
+A digit that fits in only one cell of a house, even though that cell has other
+candidates. Here, 7 in a box:
+
+```
+        c1 c2 c3
+ r1      .  .  .          7 is a candidate only at r2c2 within this box,
+ r2      .  #  .          so r2c2 = 7 - regardless of what else it could hold
+ r3      .  .  .
+```
+
+Hidden singles are what "crosshatching" finds, and they carry most easy puzzles on
+their own.
 
 ---
 
-## 3. The ladder
+# Level 2 — Locked candidates (intersections)
 
-Tier 0 is what we have. Each tier assumes the ones above it.
+The best value in the entire list: two rules, each one pass over the houses, and
+between them they carry most medium puzzles. Both exploit the overlap between a box
+and a line.
 
-### Tier 0 — implemented
+### Pointing (locked candidates type 1)
 
-| Technique | Deduces |
+If within a box all candidates for a digit lie in a single row or column, the digit
+must be somewhere in that overlap — so it cannot be anywhere else along that line.
+
+Digit 3, box 1:
+
+```
+        c1 c2 c3 | c4 c5 c6 | c7 c8 c9
+ r1      .  .  . |
+ r2      #  .  # |  x  .  x |  .  x  .
+ r3      .  .  . |
+```
+
+Inside box 1, 3 can only go in row 2. Box 1 must contain a 3 somewhere, so row 2's
+3 is inside box 1 — and every 3 elsewhere in row 2 goes.
+
+### Claiming (locked candidates type 2, box-line reduction)
+
+The mirror image. If within a row or column all candidates for a digit lie in a
+single box, the digit must be in that overlap — so it cannot be elsewhere in the box.
+
+Digit 6, row 4:
+
+```
+        c1 c2 c3 | c4 c5 c6 | c7 c8 c9
+ r4      #  .  # |  .  .  . |  .  .  .
+ r5      x  x  x |
+ r6      x  .  x |
+```
+
+Row 4 must contain a 6, and its only places are inside box 4. So box 4's 6 lies on
+row 4, and every 6 elsewhere in box 4 goes.
+
+---
+
+# Level 3 — Subsets
+
+Reasoning about groups of cells inside a single house.
+
+### Naked subset of size k
+
+*k* cells in a house whose candidates, taken together, are exactly *k* digits. Those
+*k* digits are used up by those *k* cells, so no other cell in the house can hold any
+of them.
+
+A naked triple — note that no cell needs all three digits:
+
+```
+ {2,7}   {2,9}   {7,9}   {2,4,7}   {1,9,5}   ...
+   #       #       #        x         x
+```
+
+The union of the three marked cells is `{2,7,9}` — three digits in three cells. So 2,
+7 and 9 vanish from every other cell in the house: `{2,4,7}` becomes `{4}`, a naked
+single, and `{1,9,5}` becomes `{1,5}`.
+
+### Hidden subset of size k
+
+The dual. *k* digits in a house that occur in exactly *k* cells. Those cells must
+hold those digits between them, so every *other* candidate in them goes.
+
+A hidden pair. Five cells left in this row, holding 1, 2, 3, 5 and 8 between them:
+
+```
+ {2,5,8}  {2,5,8}  {1,3,5,8}  {1,3,5,8}  {2,5,8}
+                       #          #
+```
+
+1 and 3 occur only in the two marked cells. Those cells must therefore take 1 and 3
+in some order, so every other candidate in them goes: both collapse to `{1,3}`.
+
+Note what that leaves — three cells reading `{2,5,8}`, which is a naked triple, and
+the row is fully determined by two level-3 deductions in sequence.
+
+> **Worth knowing:** in a house with *n* unsolved cells, a naked *k*-subset is the
+> same fact as a hidden *(n−k)*-subset. Implementing both directions for *k* = 2, 3, 4
+> therefore covers subsets well past size 4, which is where everyone stops.
+
+### Locked pair / locked triple
+
+A naked subset whose cells happen to lie in a box *and* a line — it eliminates along
+both at once. Free if the subset code already knows which houses a cell belongs to.
+
+---
+
+# Level 4 — Basic fish
+
+The first technique spanning the whole grid, and the first to work on a **single
+digit** across many houses.
+
+Pick *N* rows in which the digit is confined to the same *N* columns (or the
+transpose). Those *N* rows must place the digit in those *N* columns, one per column
+— so the digit cannot appear anywhere else in those columns.
+
+### X-Wing (N = 2)
+
+Digit 4:
+
+```
+      c1 c2 c3 c4 c5 c6 c7 c8 c9
+ r1    .  .  x  .  .  .  .  .  .
+ r2    .  .  #  .  .  .  #  .  .     <- 4 fits only in c3 and c7
+ r3    .  .  .  .  4  .  x  .  .
+ r4    .  .  .  .  .  .  .  .  .
+ r5    .  .  #  .  .  .  #  .  .     <- 4 fits only in c3 and c7
+ r6    .  .  x  .  .  .  .  .  .
+ r7    .  .  .  4  .  .  .  .  .
+ r8    .  .  .  .  .  .  x  .  .
+ r9    .  .  .  .  .  .  .  .  .
+```
+
+Rows 2 and 5 each need a 4, and each can only take it in column 3 or column 7. Two
+rows, two columns: the 4s occupy c3 and c7 in some order, using up both columns. So
+every other 4 in c3 and c7 goes. The 4s at r3c5 and r7c4 are untouched — they are
+outside the pattern's columns.
+
+### Swordfish (N = 3), Jellyfish (N = 4)
+
+The same shape, wider. Rows need not have exactly *N* candidates — two is fine, as
+long as they fall inside the *N* columns.
+
+Digit 7, a swordfish on rows 1, 3, 5 and columns 2, 5, 8:
+
+```
+      c1 c2 c3 c4 c5 c6 c7 c8 c9
+ r1    .  #  .  .  #  .  .  .  .     <- 7 only in c2, c5
+ r2    .  .  .  .  .  .  .  .  .
+ r3    .  #  .  .  .  .  .  #  .     <- 7 only in c2, c8
+ r4    .  x  .  .  x  .  .  x  .
+ r5    .  .  .  .  #  .  .  #  .     <- 7 only in c5, c8
+ r6    .  .  .  .  .  .  .  .  .
+ r7    .  x  .  .  .  .  .  .  .
+ r8    .  .  .  .  x  .  .  .  .
+ r9    .  .  .  .  .  .  .  x  .
+```
+
+Three rows confined to three columns, so those three columns are spoken for.
+
+Beyond N = 4 the patterns get rarer than they are worth; a size-5 fish (squirmbag) is
+almost always visible as something cheaper.
+
+---
+
+# Level 5 — Single-digit patterns and wings
+
+Chain-flavoured reasoning that needs no chain machinery. Everything here rests on
+**conjugate pairs**: a house where a digit has exactly two possible cells, so one of
+them is the digit and the other is not.
+
+### Skyscraper
+
+Two rows where the digit has exactly two places, sharing one column.
+
+Digit 9:
+
+```
+      c1 c2 c3  c4 c5 c6  c7 c8 c9
+ r1    .  .  .   .  .  .   .  .  x
+ r2    .  #  .   .  .  .   .  #  .     <- 9 only in c2, c8
+ r3    .  .  .   .  .  .   .  .  x
+ r4    .  .  .   .  .  .   .  x  .
+ r5    .  #  .   .  .  .   .  .  #     <- 9 only in c2, c9
+ r6    .  .  .   .  .  .   .  x  .
+```
+
+Column 2 can hold only one 9, so r2c2 and r5c2 are not both 9 — meaning at least one
+of the far ends, r2c8 or r5c9, **is** 9. Any cell seeing both far ends therefore
+cannot be 9. r1c9 and r3c9 share a box with r2c8 and a column with r5c9; r4c8 and
+r6c8 share a box with r5c9 and a column with r2c8.
+
+### 2-String Kite
+
+A row and a column, each with two places for the digit, with one end from each in the
+same box.
+
+Digit 4: row 2 has 4 only at c1 and c8; column 3 has 4 only at r1 and r7. The near
+ends r2c1 and r1c3 share box 1, so they cannot both be 4 — meaning at least one far
+end, r2c8 or r7c3, is 4. **Eliminate 4 from r7c8**, which sees both.
+
+### Turbot fish
+
+The general form: any two conjugate pairs on one digit linked by a cell that sees one
+end of each. Skyscraper and 2-String Kite are its two special cases, so implementing
+Turbot Fish subsumes both.
+
+### Empty rectangle
+
+Within a box, all candidates for the digit fit into one row plus one column of that
+box — leaving a 2x2 "empty rectangle" in the corner. Combine with a conjugate pair
+elsewhere.
+
+Digit 4 in box 5 occupies only row 5 and column 5 of that box. Column 8 has 4 only at
+r2 and r5. Then **4 goes from r2c5**:
+
+> If r2c5 were 4, column 5's 4 is at row 2, so box 5's 4 must be on row 5 — which
+> makes row 5's 4 land inside box 5, so r5c8 is not 4. The conjugate pair then forces
+> r2c8 = 4. But now row 2 holds two 4s. Contradiction.
+
+### XY-Wing
+
+Three cells with two candidates each. A **pivot** `{x,y}`, and two **pincers**
+`{x,z}` and `{y,z}`, each seeing the pivot.
+
+```
+        c2                    c7
+ r2   {5,8}  . . . . . . .  {3,5}      pivot at r2c2, pincer A at r2c7 (same row)
+        .                      .
+ r6   {3,8}  . . . . . . .    x        pincer B at r6c2 (same column)
+```
+
+The pivot is 5 or 8. If it is 5, pincer A cannot be 5, so A = 3. If it is 8, pincer B
+cannot be 8, so B = 3. Either way **one of the pincers is 3** — so any cell seeing
+both pincers loses 3. Here r6c7 sees A down its column and B along its row.
+
+### XYZ-Wing
+
+The pivot keeps a third candidate: pivot `{x,y,z}`, pincers `{x,z}` and `{y,z}`. Now
+*all three* cells could be z, so eliminations are limited to cells seeing all three.
+
+### W-Wing
+
+Two cells holding the same pair `{x,y}` that do **not** see each other, joined by a
+conjugate pair on x whose two ends see one cell each. Then one of the two cells is y,
+so y goes from any cell seeing both.
+
+---
+
+# Level 6 — Uniqueness
+
+These exploit the fact that a published puzzle has exactly **one** solution. They are
+fast and they fire often — but see the warning below.
+
+### Unique rectangle, type 1
+
+Four cells forming a rectangle across two rows, two columns and exactly **two** boxes,
+where three of them hold the identical pair `{a,b}`:
+
+```
+          c1        c4
+ r1     {3,7}     {3,7}
+ r2     {3,7}    {3,7,5}
+```
+
+If the fourth cell were 3 or 7, all four corners would read `{3,7}` and the two
+digits could be swapped diagonally — giving two valid solutions. A proper puzzle has
+one. So **the fourth cell is 5**.
+
+Types 2 to 6, plus hidden and avoidable rectangles, handle the cases where more than
+one corner carries extras.
+
+### BUG+1
+
+If every unsolved cell has exactly two candidates except one cell with three, the
+grid would have an even number of solutions unless that extra candidate is placed. The
+answer is the candidate appearing **three times** in one of that cell's houses:
+
+```
+ r5c5 = {2,6,9}, every other unsolved cell bivalue.
+ Across row 5:  2 appears twice, 9 appears twice, 6 appears three times.
+ -> r5c5 = 6
+```
+
+> **These techniques are only valid on a grid known to have exactly one solution.**
+> That is true of a puzzle as handed to you, and false of a grid reached by assuming
+> a value — where a wrong assumption may have produced many completions or none. Any
+> solver that ever branches must switch this level off inside a branch. Given that
+> levels 2–5 cover more ground with no such caveat, this level is optional.
+
+---
+
+# Level 7 — Colouring and chains
+
+The point where the unit of reasoning stops being a cell and becomes a
+**(cell, digit) node**, connected by two kinds of link:
+
+- **Strong link** — if one end is false, the other is true. A conjugate pair, or the
+  two candidates inside one cell.
+- **Weak link** — if one end is true, the other is false. Any two candidates for the
+  same digit sharing a house, or any two candidates inside one cell.
+
+### Simple colouring
+
+Follow the strong links for a single digit and two-colour the graph. Exactly one
+colour is the truth.
+
+Digit 7, conjugate pairs r1c1–r1c5 (row 1), r1c5–r6c5 (column 5), r6c5–r6c9 (row 6):
+
+```
+  r1c1 = A        r1c5 = B        r6c5 = A        r6c9 = B
+```
+
+Two consequences:
+
+- **Colour trap** — any cell seeing both a colour A cell and a colour B cell cannot
+  be 7, since one of the two is 7 whichever colour wins. Here r6c1 sees r1c1 down
+  column 1 and r6c9 along row 6, so **7 goes from r6c1**.
+- **Colour wrap** — if two cells of the *same* colour ever share a house, that colour
+  is impossible, so every cell of the other colour is 7.
+
+### Remote pair
+
+A chain of four or more cells all holding the same pair `{2,7}`, each seeing the next.
+The values alternate, so the two ends of an even-length chain are opposite.
+
+```
+ r1c1{2,7} -- r1c6{2,7} -- r4c6{2,7} -- r4c9{2,7}
+```
+
+Four cells, so r1c1 and r4c9 hold different digits — one is 2 and one is 7. Any cell
+seeing both loses **both** digits: r1c9 and r4c1.
+
+### X-chain
+
+Alternating strong and weak links on one digit, starting and ending with a strong
+link. One endpoint must hold the digit, so cells seeing both endpoints lose it.
+
+### XY-chain
+
+A chain of two-candidate cells where each shares a digit with the next, and both ends
+share a digit z.
+
+```
+ r1c1{4,9} -- (9) -- r1c7{2,9} -- (2) -- r5c7{2,4}
+```
+
+If r1c1 is not 4 it is 9; then r1c7 is 2; then r5c7 is 4. So **one end is 4** either
+way, and any cell seeing both ends loses 4 — here r5c1.
+
+### Nice loops and AIC
+
+The general form. An alternating inference chain that closes on itself: a
+*discontinuous* loop yields one elimination or placement at the break point, a
+*continuous* loop upgrades every weak link in it to strong and yields many
+eliminations at once. **Grouped** variants let a node be a set of candidates — a
+box-line intersection, or an almost locked set — rather than a single cell.
+
+---
+
+# Level 8 — Almost locked sets and exotic fish
+
+An **almost locked set** is *n* cells within one house holding *n + 1* candidates: one
+digit short of being locked. Remove any one candidate and the rest lock.
+
+- **ALS-XZ** — two almost locked sets sharing a *restricted common candidate* x, which
+  can be true in only one of them. Any digit z common to both can then be eliminated
+  from every cell seeing all of z's positions in both sets.
+- **ALS-XY-Wing**, **ALS chain**, **Death Blossom** — a stem cell whose every candidate
+  links into a different almost locked set.
+- **Sue de Coq** — a box-line intersection whose candidates decompose so that the cells
+  outside it are constrained from both directions.
+- **Finned and sashimi fish** — a fish that would be valid but for extra candidates
+  (**fins**) in one base unit. The eliminations survive, restricted to cells that also
+  see every fin.
+
+  Digit 5: rows 2 and 6 would form an X-Wing on columns 3 and 7, except row 6 has a
+  third candidate at c8 — in the same box as the c7 corner. If the fin is not 5 the
+  X-Wing is real; if the fin is 5 then that box's 5 is used up. Either way, cells in
+  column 7 *inside that box* lose their 5.
+
+- **Franken** and **mutant fish** — fish whose base and cover sets mix boxes with lines.
+
+---
+
+# Level 9 — Methods of last resort
+
+Listed for completeness. All are search with a notebook.
+
+- **Templates / pattern overlay** — enumerate the 46,656 ways a single digit can fill a
+  grid, and intersect with the constraints. Not a human technique in any meaningful
+  sense.
+- **Forcing chain** — any chain leading to a contradiction or a verity: follow both
+  branches of a two-candidate cell and use whatever they agree on.
+- **Forcing net** — the branching version, findable by hand only with great patience.
+- **Kraken fish** — a finned fish whose fin is resolved by a chain.
+- **Nishio, Bowman's bingo** — systematic trial.
+
+---
+
+## Which levels a puzzle needs
+
+Roughly, by published difficulty band:
+
+| Band | Levels required |
 |---|---|
-| Peer elimination (`HouseCandidateEliminator`) | A value placed in a house is not a candidate elsewhere in it |
-| Hidden single (`SingleCandidateMarker`) | A value fitting in only one cell of a house belongs there |
-| Naked single (`SolveSingleCandidateTransformer`) | A cell with one candidate is solved |
+| Easy | 1 |
+| Medium | 1–2, plus naked and hidden pairs from 3 |
+| Hard | 1–3 in full, often X-Wing or Swordfish from 4 |
+| Expert | 1–5, sometimes uniqueness or colouring |
+| Extreme | Chains, AIC and ALS from 7–8; occasionally 9 |
 
-*Worth adding for free:* **Full House / Last Digit** — a house with exactly one
-unsolved cell. It is a special case of naked single, but it is the cheapest check in
-the game and makes solution traces read the way a human would write them.
+Levels 1–3 finish the large majority of puzzles in general circulation. Levels 4–5
+cover nearly all of the rest. Levels 7 and up exist for a thin tail of deliberately
+hard constructions.
 
-### Tier 1 — Locked candidates (intersections)
-
-The best value in the whole list. Two rules, both one pass over the 27 houses.
-
-- **Pointing (Type 1).** If in a box all candidates of digit *v* lie in one row or
-  column, *v* cannot appear in that line outside the box. Eliminate it there.
-- **Claiming / Box-Line Reduction (Type 2).** If in a row or column all candidates of
-  *v* lie in one box, eliminate *v* from the rest of that box.
-
-*Needs from the model:* house **intersections** — which cells a box and a line share.
-`houses()` currently returns an untyped `List<List<Cell>>`, so a technique cannot ask
-"is this a box?". See §4a.
-
-### Tier 2 — Subsets
-
-- **Naked subset of size k.** *k* cells in a house whose candidate union is exactly
-  *k* values → remove those values from the house's other cells.
-- **Hidden subset of size k.** *k* values in a house occurring in exactly *k* cells →
-  remove every other candidate from those cells.
-- **Locked pair/triple.** A naked subset whose cells lie in both a box and a line —
-  eliminates in both houses at once.
-
-*Duality worth knowing:* in a house with *n* unsolved cells, a naked *k*-subset is a
-hidden *(n−k)*-subset. Implementing both directions for *k* = 2, 3, 4 therefore
-covers subsets far past size 4, and is where everyone stops.
-
-*Needs from the model:* nothing new. This is where the `Candidates` bitmask pays off —
-a naked pair is two cells in a house with equal masks and `size == 2`; a naked triple
-is three masks whose `or` has `bitCount == 3`. Subset enumeration is
-`combinations(unsolved cells of the house, k)`, at most C(9,4) = 126 per house.
-
-### Tier 3 — Basic fish
-
-For a single digit *v*: pick *N* base units (all rows, or all columns) in which *v*'s
-candidates lie within *N* cover units of the opposite orientation. Then *v* is
-confined to the intersections, so eliminate it from the cover units outside the base.
-
-| N | Name |
-|---|---|
-| 2 | X-Wing |
-| 3 | Swordfish |
-| 4 | Jellyfish |
-| 5 | Squirmbag (rarely worth it) |
-
-*Needs from the model:* rows and columns as two **orthogonal, typed** families. A flat
-list of 27 houses cannot express "base sets from one orientation, cover sets from the
-other". See §4a.
-
-### Tier 4 — Single-digit patterns
-
-Cheap chain-flavoured patterns that need no chain machinery. All operate on one digit
-and on *conjugate pairs* (houses where *v* has exactly two candidate cells).
-
-- **Skyscraper** — two lines where *v* has exactly two positions, sharing one
-  cross-line; eliminate *v* from cells seeing both far ends.
-- **2-String Kite** — a row and a column each with two positions for *v*, one from
-  each in the same box; eliminate *v* from the cell seeing the other two ends.
-- **Turbot Fish** — the general two-strong-link form; Skyscraper and 2-String Kite are
-  its special cases, so implementing Turbot Fish subsumes both.
-- **Empty Rectangle** — in a box, *v*'s candidates fit within one row plus one column;
-  combine with a strong link elsewhere to eliminate.
-
-*Needs from the model:* a **strong-link index** — for each digit, the houses in which
-it has exactly two candidate positions. Building this once per pass is the first step
-towards the chain machinery in tier 7.
-
-### Tier 5 — Wings
-
-- **XY-Wing** — pivot with candidates `{x,y}`; two pincers `{x,z}` and `{y,z}`, each
-  seeing the pivot. Whatever the pivot takes, one pincer is *z*, so eliminate *z* from
-  every cell seeing both pincers.
-- **XYZ-Wing** — pivot `{x,y,z}`, pincers `{x,z}` and `{y,z}`; eliminate *z* from cells
-  seeing all three.
-- **W-Wing** — two cells with the identical pair `{x,y}` that do not see each other,
-  joined by a strong link on *x*; eliminate *y* from cells seeing both.
-- **WXYZ-Wing** — the four-cell generalisation.
-
-*Needs from the model:* a **bivalue-cell index** and cheap "do these two cells see each
-other?" — the latter is already there as the precomputed `PEERS` table behind
-`solvedPeers`, it just needs exposing as `Field.sees(a, b)`.
-
-> **Soundness trap.** Wings and everything below re-derive facts about cells while
-> eliminating from other cells in the same pass. A reference implementation of XY-Wing
-> written for this document snapshotted the bivalue cells once and then kept using that
-> stale list after its own eliminations had changed them. See §4b — this is the same
-> bug class that has already bitten this codebase twice.
-
-### Tier 6 — Uniqueness
-
-- **Unique Rectangle, types 1–6** — four cells spanning two rows, two columns and
-  exactly two boxes cannot all hold the same two candidates, or the puzzle would have
-  two solutions. The types differ by which extra candidates are present.
-- **Hidden / Avoidable Rectangle** — the same idea over hidden candidates, and over
-  already-placed values.
-- **BUG+1** — if every unsolved cell has exactly two candidates except one with three,
-  the extra candidate must be the answer in that cell.
-
-> **These are not sound as general `Field` transforms.** They assume the grid has
-> exactly one solution. That is true of a puzzle as given, and *false* of a grid inside
-> a search branch, where a wrong assumption may have created multiple completions or
-> none. If they are implemented they must be gated so they never run under `search`.
-> Given tiers 1–5 cover more ground for less risk, this tier is optional.
-
-### Tier 7 — Colouring and chains
-
-The point at which `FieldProcessor` stops being the right shape (§4c).
-
-- **Simple Colours** (Colour Trap / Colour Wrap) — for one digit, two-colour the graph
-  of conjugate pairs. Two same-coloured cells in one house ⇒ that colour is false. Any
-  cell seeing both colours loses the candidate.
-- **Multi-Colours** — relations between separate colour clusters.
-- **3D Medusa** — colouring over `(cell, value)` nodes across all digits at once.
-- **Remote Pair** — a chain of four or more bivalue cells sharing the same pair;
-  the ends are opposite, so eliminate both digits from cells seeing both ends.
-- **X-Chain** — alternating strong/weak links on a single digit, starting and ending
-  strong; eliminate that digit from cells seeing both endpoints.
-- **XY-Chain** — a chain of bivalue cells whose ends share a digit; same elimination.
-- **Nice Loop / AIC** — the general form. A discontinuous loop yields one elimination
-  or placement; a continuous loop upgrades every weak link in it to strong, yielding
-  many.
-- **Grouped Nice Loop / AIC** — nodes may be *groups* of candidates (a box-line
-  intersection) or Almost Locked Sets.
-
-### Tier 8 — Almost Locked Sets, and exotic fish
-
-- **ALS-XZ** — two almost-locked sets sharing a restricted common candidate.
-- **ALS-XY-Wing**, **ALS Chain**, **Death Blossom** — a stem cell whose every candidate
-  links into an ALS.
-- **Sue de Coq** — a box-line intersection whose candidates decompose to constrain the
-  cells outside it.
-- **Finned / Sashimi fish** — a fish that is valid except for extra candidates (fins)
-  in one base unit; eliminations restrict to cells that also see every fin.
-- **Franken / Mutant fish** — base and cover sets that mix boxes with lines.
-
-### Tier 9 — Methods of last resort
-
-Included for completeness; all are search with a notebook.
-
-- **Templates / Pattern Overlay** — enumerate the 46,656 placement patterns of a single
-  digit and intersect with the constraints. HoDoKu is blunt: *"Templates are not meant
-  for human players."*
-- **Forcing Chain** — any chain leading to a contradiction or a verity.
-- **Forcing Net** — the branching version; *"can be found manually only by very
-  experienced players."*
-- **Kraken Fish** — finned fish plus chains.
-- **Bowman's Bingo**, **Nishio** — systematic trial.
-
-This is where our `SudokuSolver.search` already sits. Anything we build in this tier
-is a re-presentation of what search does, formatted as an explanation.
+Clue count is a **poor** predictor of difficulty — a 30-clue puzzle can need chains
+and a 22-clue puzzle can fall to singles. The one reliable signal is at the extreme:
+17 is the proven minimum number of clues for a unique solution, and puzzles near that
+floor almost always need level 7 or beyond.
 
 ---
 
-## 4. What the ladder demands of the architecture
+## Three traps worth designing around
 
-Four changes, each forced by a specific tier. Worth making *before* the technique that
-needs them, not after.
+**Never decide against a stale snapshot.** Most techniques begin by grouping cells —
+by house, by candidate count, by digit. If eliminations are then applied while that
+grouping is still being iterated, later decisions are made against a picture that is
+no longer true. Two hidden singles can claim the same cell; a digit can look confined
+to one box because a cell that was solved a moment ago quietly dropped out of the
+list. The robust shape is to compute every elimination against an unchanging snapshot
+and apply them as one batch, so a technique physically cannot observe its own partial
+results.
 
-### a. Houses must be typed
+**A digit already placed in a house must disqualify that house, not vanish from it.**
+The common form of the previous bug. Filtering a candidate list by "cells not yet
+solved" silently drops the placed digit, and the remaining candidates then look
+confined when they are merely leftovers. Check for the placement explicitly.
 
-```kotlin
-enum class HouseKind { ROW, COLUMN, SEGMENT }
-data class House(val kind: HouseKind, val index: Int, val cells: List<Cell>)
-```
-
-`Field.houses(): List<List<Cell>>` cannot express what tiers 1 and 3 need. Locked
-candidates must ask "box, and which line crosses it"; fish must draw base sets from one
-orientation and cover sets from the other. Add `Field.intersections()` yielding the 54
-box-line pairs while you are there — it is what locked candidates iterates.
-
-### b. Techniques must compute against a snapshot and apply eliminations atomically
-
-**This is the recurring bug in this codebase.** It has now appeared three times:
-
-1. `SingleCandidateMarker` decided hidden singles against a stale grouped snapshot, so
-   two candidates could claim the same cell (fixed in `6d5906d`).
-2. Search accepted complete-but-invalid grids because nothing compared two solved cells
-   to each other (fixed in `d5cb2c2`).
-3. A reference `claiming` implementation written for this document filtered its
-   candidate list by "not yet solved", and its own eliminations reduced cells to
-   singletons mid-pass — so a cell silently dropped out of the list and made a digit
-   look confined when it was not. It removed a true candidate.
-
-All three are the same mistake: **deriving "is this cell decided?" from mutable
-candidate state while mutating it.** Every technique from tier 1 up eliminates
-candidates, and every one of them is exposed to this.
-
-The fix is structural, not vigilance:
-
-```kotlin
-data class Elimination(val at: CellPosition, val values: Candidates)
-
-interface EliminationTechnique : FieldProcessor {
-    /** Reads `field` only. Must not observe its own partial results. */
-    fun eliminations(field: Field): List<Elimination>
-}
-```
-
-The processor computes everything against the immutable field it was handed, then the
-framework applies the whole batch. A technique physically cannot see its own partial
-results, and the bug class disappears. This also makes each technique trivially
-testable: assert on the returned eliminations, not on a resulting `Field`.
-
-### c. Chains need a different abstraction entirely
-
-From tier 7 up, the unit of reasoning is not a cell but a `(cell, value)` node, and the
-structure is a graph of strong and weak links, not a grid transform. `FieldProcessor`'s
-`Field -> Field` shape does not fit.
-
-```kotlin
-data class Node(val at: CellPosition, val value: Int)
-class LinkGraph(field: Field) {
-    fun strong(node: Node): List<Node>   // exactly-two-positions conjugate pairs
-    fun weak(node: Node): List<Node>     // shares a house, so not both true
-}
-```
-
-Build it once per pass and let colouring, chains and AICs all traverse it. Tier 4's
-strong-link index is the first half of this, which is a good reason to build tier 4
-before tier 7.
-
-### d. The solver loop should restart at the cheapest technique
-
-```kotlin
-// current: every processor runs on every pass
-processor.fold(field) { acc, p -> p.process(acc, deductions) }
-```
-
-Once the chain is a dozen techniques deep, this runs Jellyfish on every iteration even
-when a naked single was available. Change it to: try processors in order, stop at the
-first that changes anything, restart from the top.
-
-Two payoffs beyond speed. It keeps expensive techniques off the hot path, and it makes
-the deduction trace record *the easiest technique that was available at each step* —
-which is what a difficulty rating actually is. `RecordingDeductionListener` already
-collects the trace; this is what makes it meaningful.
-
----
-
-## 5. Recommended order
-
-| # | Step | Why now |
-|---|---|---|
-| 1 | Type the houses; add `intersections()` and `sees(a, b)` (§4a) | Prerequisite for 2 and 4 |
-| 2 | **Locked candidates** (pointing + claiming) | Biggest single win: takes this repo from 1 to 3 puzzles solved without guessing |
-| 3 | Introduce `Elimination` and batch application (§4b) | Do it before the technique count grows; retrofit locked candidates onto it |
-| 4 | Naked + hidden subsets, sizes 2–4 | Solves `round15`; pure bitmask work, no new model concepts |
-| 5 | Restart-at-cheapest in the solver loop (§4d) | Cheap, and makes the difficulty trace meaningful |
-| 6 | Basic fish (X-Wing, Swordfish, Jellyfish) | First technique needing typed orientation; validates §4a |
-| 7 | Turbot Fish (subsumes Skyscraper and 2-String Kite) | Builds the strong-link index that tier 7 will reuse |
-| 8 | XY-Wing, then XYZ-Wing and W-Wing | High hit rate on published "expert" puzzles |
-| 9 | `LinkGraph`, then Simple Colours and X-Chain (§4c) | Only worth it if `unsolved2` / `unsolved3` matter |
-
-Stop after step 8 unless the two 17–18-clue puzzles are the goal. Everything past it
-costs more than it returns for puzzles anyone actually publishes.
-
-## 6. How to know a technique earned its place
-
-Every technique gets a `Technique` enum constant and reports through
-`DeductionListener`, so coverage is directly testable:
-
-```kotlin
-val listener = RecordingDeductionListener()
-SudokuSolver(listener).solve(puzzle)
-assertThat(listener.guesses).isZero()          // solved by logic alone
-assertThat(listener.deductions.map { it.technique }).contains(Technique.POINTING)
-```
-
-A technique that does not move some puzzle from `guesses > 0` to `guesses == 0`, or
-does not shorten an existing trace, has not paid for itself. Add the puzzle to the
-suite with the assertion at the same time as the processor.
+**Completing the grid is not the same as solving it.** Checking that every cell has a
+value says nothing about whether the values are legal. Techniques that narrow cells
+through different houses can place the same digit twice in one house, and a completed
+grid containing a duplicate will pass a naive "is it finished?" test. Validity means
+no house repeats a digit — check that, not the fill count.
 
 ---
 
 ## Sources
 
-- [HoDoKu — Human Style Solving Techniques](https://hodoku.sourceforge.net/en/techniques.php) — the most complete taxonomy available; 70+ techniques
-- [HoDoKu — Intersections (Locked Candidates)](https://hodoku.sourceforge.net/en/tech_intersections.php)
-- [HoDoKu — Chains and Loops](https://hodoku.sourceforge.net/en/tech_chains.php) — source of the "chains + singles solve every known sudoku" claim
-- [HoDoKu — Methods of Last Resort](https://hodoku.sourceforge.net/en/tech_last.php) — Templates, Forcing Chain/Net, Kraken, Brute Force
-- [SudokuWiki — Strategy list](https://www.sudokuwiki.org/sudoku.htm) — 42 strategies grouped Basic / Tough / Diabolical / Extreme
-- [Sudopedia — Solving Technique](https://www.sudopedia.org/wiki/Solving_Technique) — category index
+- [HoDoKu — Human style solving techniques](https://hodoku.sourceforge.net/en/techniques.php) — the most complete taxonomy available, 70+ techniques
+- [HoDoKu — Intersections (locked candidates)](https://hodoku.sourceforge.net/en/tech_intersections.php)
+- [HoDoKu — Chains and loops](https://hodoku.sourceforge.net/en/tech_chains.php) — source of the "chains and singles solve every known sudoku" claim
+- [HoDoKu — Methods of last resort](https://hodoku.sourceforge.net/en/tech_last.php)
+- [SudokuWiki — Strategy list](https://www.sudokuwiki.org/sudoku.htm) — 42 strategies grouped basic / tough / diabolical / extreme
+- [Sudopedia — Solving technique](https://www.sudopedia.org/wiki/Solving_Technique) — category index
 - [Sudoku A Day — Strategies by difficulty](https://sudokuaday.com/sudoku-strategies) — which techniques each difficulty band needs
