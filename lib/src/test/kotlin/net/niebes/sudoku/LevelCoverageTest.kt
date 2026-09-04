@@ -33,7 +33,7 @@ internal class LevelCoverageTest {
 
             assertThat(result)
                 .describedAs(puzzle.givens)
-                .isInstanceOf(SolveResult.Solved::class.java)
+                .isInstanceOf(Solved::class.java)
             assertThat(result.field).isEqualTo(puzzle.solved())
             assertThat(recorder.guesses).isZero()
         }
@@ -44,11 +44,11 @@ internal class LevelCoverageTest {
         beyondLevelThree.forEach { puzzle ->
             assertThat(SudokuSolver().propagate(puzzle.field()))
                 .describedAs(puzzle.givens)
-                .isInstanceOf(SolveResult.Stalled::class.java)
+                .isInstanceOf(Stalled::class.java)
 
             val result = SudokuSolver().solve(puzzle.field())
 
-            assertThat(result).isInstanceOf(SolveResult.Solved::class.java)
+            assertThat(result).isInstanceOf(Solved::class.java)
             assertThat(result.field).isEqualTo(puzzle.solved())
         }
     }

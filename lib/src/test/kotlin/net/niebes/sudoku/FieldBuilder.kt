@@ -35,12 +35,3 @@ internal class FieldBuilder {
 }
 
 internal fun field(build: FieldBuilder.() -> Unit): Field = FieldBuilder().apply(build).build()
-
-internal fun Field.candidatesAt(row: Int, column: Int): Candidates =
-    when (val cell = cellAt(CellPosition(row, column))) {
-        is UnsolvedCell -> cell.candidates
-        is SolvedCell -> Candidates.of(cell.value)
-    }
-
-internal fun Field.valueAt(row: Int, column: Int): Int? =
-    (cellAt(CellPosition(row, column)) as? SolvedCell)?.value

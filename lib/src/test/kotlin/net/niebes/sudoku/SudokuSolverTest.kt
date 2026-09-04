@@ -209,9 +209,9 @@ internal class SudokuSolverTest {
         )
 
         val easy = RecordingDeductionListener()
-        assertThat(SudokuSolver(easy).solve(singlesOnly)).isInstanceOf(SolveResult.Solved::class.java)
+        assertThat(SudokuSolver(easy).solve(singlesOnly)).isInstanceOf(Solved::class.java)
         val hard = RecordingDeductionListener()
-        assertThat(SudokuSolver(hard).solve(needsSearch)).isInstanceOf(SolveResult.Solved::class.java)
+        assertThat(SudokuSolver(hard).solve(needsSearch)).isInstanceOf(Solved::class.java)
 
         assertThat(easy.deductions).isNotEmpty()
         assertThat(easy.deductions.map { it.technique }).doesNotContain(Technique.GUESS)
@@ -223,7 +223,7 @@ internal class SudokuSolverTest {
     private fun solutionEquals(input: Field, expectedSolution: Field) {
         val result = SudokuSolver().solve(input)
 
-        assertThat(result).isInstanceOf(SolveResult.Solved::class.java)
+        assertThat(result).isInstanceOf(Solved::class.java)
         assertThat(result.field).isEqualTo(expectedSolution)
     }
 }

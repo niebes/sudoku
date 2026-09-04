@@ -45,26 +45,26 @@ class SudokuSolver(
      */
     fun search(field: Field): SolveResult {
         val propagated = propagate(field)
-        if (propagated !is SolveResult.Stalled) return propagated
+        if (propagated !is Stalled) return propagated
 
-        val pivot = propagated.field.pivot() ?: return SolveResult.Solved(propagated.field)
+        val pivot = propagated.field.pivot() ?: return Solved(propagated.field)
         pivot.candidates.values.forEach { candidate ->
             deductions.onDeduction(Placement(Technique.GUESS, pivot.position, candidate))
             val attempt = search(propagated.field.assign(pivot.position, candidate))
-            if (attempt is SolveResult.Solved) return attempt
+            if (attempt is Solved) return attempt
         }
-        return SolveResult.Contradiction(propagated.field, pivot.position)
+        return Contradiction(propagated.field, pivot.position)
     }
 
     /** Runs the processor chain until it solves the field, contradicts itself, or stops making progress. */
     fun propagate(field: Field): SolveResult {
         var current = field
         while (true) {
-            current.contradictionAt()?.let { return SolveResult.Contradiction(current, it) }
-            if (current.isSolved()) return SolveResult.Solved(current)
+            current.contradictionAt()?.let { return Contradiction(current, it) }
+            if (current.isSolved()) return Solved(current)
 
             val next = iterate(current)
-            if (next == current) return SolveResult.Stalled(current)
+            if (next == current) return Stalled(current)
             current = next
         }
     }

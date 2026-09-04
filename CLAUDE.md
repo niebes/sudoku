@@ -14,6 +14,21 @@ Gradle wrapper, single subproject `lib` (Kotlin/JVM 2.1.20, Java toolchain 21, J
 
 There is no lint/format task and no CI configuration. Configuration cache, parallel builds and the build cache are all enabled in `gradle.properties`, so a stale `.gradle/configuration-cache` is a likely suspect for odd build behaviour.
 
+## Layout
+
+One type per file. Packages, and the direction dependencies run:
+
+```
+net.niebes.sudoku            SudokuSolver, SolveResult and its three cases
+net.niebes.sudoku.model      Field, Cell, Candidates, CellPosition, House, Intersection
+net.niebes.sudoku.deduction  Technique, Deduction (Placement / Elimination), the listeners
+net.niebes.sudoku.technique  FieldProcessor, EliminationTechnique and the eight techniques
+net.niebes.sudoku.io         parsers and writers
+```
+
+`Technique` lives with the deductions, not with the implementations, so techniques depend on
+deductions and not the reverse. Tests mirror the package they cover.
+
 ## Architecture
 
 A Sudoku solver: constraint propagation with backtracking search on top. There is no `main` — the library is exercised through its tests.

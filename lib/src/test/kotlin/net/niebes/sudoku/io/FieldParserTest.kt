@@ -1,6 +1,7 @@
 package net.niebes.sudoku.io
 
 import net.niebes.sudoku.SolveResult
+import net.niebes.sudoku.Solved
 import net.niebes.sudoku.SudokuSolver
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatIllegalArgumentException
@@ -17,7 +18,7 @@ internal class FieldParserTest {
 
         val result = SudokuSolver().solve(input)
 
-        assertThat(result).isInstanceOf(SolveResult.Solved::class.java)
+        assertThat(result).isInstanceOf(Solved::class.java)
         assertThat(result.field).isEqualTo(expected)
     }
 

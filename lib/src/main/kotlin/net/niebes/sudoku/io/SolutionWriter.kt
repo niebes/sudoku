@@ -1,5 +1,6 @@
 package net.niebes.sudoku.io
 
+import net.niebes.sudoku.Solved
 import net.niebes.sudoku.model.CellPosition
 import net.niebes.sudoku.model.Field
 

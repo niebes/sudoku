@@ -42,7 +42,7 @@ internal class TechniqueSoundnessTest {
 
             assertThat(result)
                 .describedAs(puzzle.givens)
-                .isInstanceOf(SolveResult.Solved::class.java)
+                .isInstanceOf(Solved::class.java)
             assertThat(result.field).isEqualTo(puzzle.solved())
         }
     }

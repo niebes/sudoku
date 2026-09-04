@@ -2,6 +2,8 @@ package net.niebes.sudoku.technique
 
 import net.niebes.sudoku.Puzzles
 import net.niebes.sudoku.SolveResult
+import net.niebes.sudoku.Solved
+import net.niebes.sudoku.Stalled
 import net.niebes.sudoku.SudokuSolver
 import net.niebes.sudoku.candidatesAt
 import net.niebes.sudoku.deduction.RecordingDeductionListener
@@ -123,9 +125,9 @@ internal class PointingEliminatorTest {
         val recorder = RecordingDeductionListener()
 
         assertThat(withoutPointing.propagate(Puzzles.needsPointing.field()))
-            .isInstanceOf(SolveResult.Stalled::class.java)
+            .isInstanceOf(Stalled::class.java)
         assertThat(SudokuSolver(recorder).propagate(Puzzles.needsPointing.field()))
-            .isInstanceOf(SolveResult.Solved::class.java)
+            .isInstanceOf(Solved::class.java)
         assertThat(recorder.techniquesUsed()).contains(Technique.POINTING)
     }
 }
