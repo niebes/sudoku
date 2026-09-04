@@ -9,30 +9,33 @@ Gradle wrapper, single subproject `lib` (Kotlin/JVM 2.1.20, Java toolchain 21, J
 ```bash
 ./gradlew build                 # compile + test
 ./gradlew :lib:test             # tests only
-./gradlew :lib:test --tests 'net.niebes.sudoku.FieldWriterTest.getCluster'   # single test
-./gradlew :lib:test --info      # see the solver's stdout trace (see below)
+./gradlew :lib:test --tests 'net.niebes.sudoku.SudokuSolverTest.round15'   # single test
 ```
 
 There is no lint/format task and no CI configuration. Configuration cache, parallel builds and the build cache are all enabled in `gradle.properties`, so a stale `.gradle/configuration-cache` is a likely suspect for odd build behaviour.
 
 ## Architecture
 
-A constraint-propagation Sudoku solver. There is no `main` — the library is exercised entirely through `lib/src/test/.../FieldWriterTest.kt`.
+A Sudoku solver: constraint propagation with backtracking search on top. There is no `main` — the library is exercised through its tests.
 
-**Immutable model** (`net.niebes.sudoku.model`): a `Field` is a `Set<Cell>`; `Cell` is a sealed class of `SolvedCell` (has a `value`) and `UnsolvedCell` (has `Candidates`, defaulting to 1..9). Nothing mutates — every transformation rebuilds the whole `Field`. Both cell subclasses hand-roll `equals`/`hashCode` over position + value/candidates; that equality is load-bearing in two places: it terminates the solver loop and it backs the `assertThat(output).isEqualTo(expectedSolution)` test assertions. Changing it changes both.
+**Immutable model** (`net.niebes.sudoku.model`). `Cell` is a sealed interface of `SolvedCell` (a `value`) and `UnsolvedCell` (its remaining `Candidates`); both are data classes, and that generated equality is load-bearing — it terminates the propagation loop and backs the test assertions. `Candidates` is an inline value class over a nine-bit mask, so elimination is one AND and set algebra between cells is one instruction; `values` is a derived view for printing.
 
-`Field.init` requires exactly 9 distinct rows and 9 distinct columns spanning 0..8, so malformed puzzle input fails at parse time with `IllegalArgumentException`, not later in the solver.
+`Field` stores 81 cells row-major, indexed by `CellPosition.index` (`row * 9 + column`), and normalises whatever order its constructor is handed so equality stays canonical. The 27 houses and the 20 peers of each position are identical for every field, so they are computed once in the companion — that is why `solvedPeers` is a 20-element walk rather than a scan.
 
-`CellPosition.segment` derives the 3x3 box from `row/3, column/3`; `Field` exposes `getRow` / `getColumn` / `getSegment` as the three constraint groups every eliminator works over.
+**A house is the unit of reasoning.** Row, column and segment are one constraint, so techniques are written against `Field.houses()` / `housesOf(position)` rather than against three near-identical accessors. Any technique added next (naked pairs, pointing pairs, box-line reduction, X-wing) should be phrased the same way.
 
-**Solver pipeline** (`SudokuSolver`): holds an ordered `List<FieldProcessor>` and folds the field through all of them repeatedly until an iteration produces an equal `Field` (fixpoint), then returns. The default chain is:
+**Solver** (`SudokuSolver`). Two layers:
 
-1. `RowCandidateEliminator`, `ColumnCandidateEliminator`, `SegmentCandidateEliminator` — strip solved values from the candidates of unsolved cells in the same group. All three implement `UnsolvedCellFieldProcessor`, which supplies the "map over cells, pass `SolvedCell` through untouched" boilerplate.
-2. `SingleCandidateMarker` — hidden singles: within a row/column/segment, a candidate appearing in exactly one cell narrows that cell to it.
-3. `SolveSingleCandidateTransformer` — naked singles: a one-candidate cell becomes a `SolvedCell`; a zero-candidate cell throws `IllegalStateException("sudoku unsolvable")`.
+- `propagate` folds the field through an ordered `List<FieldProcessor>` until it solves the field, contradicts itself, or stops changing. The default chain is `HouseCandidateEliminator` (a value placed in a house is not a candidate elsewhere in it) → `SingleCandidateMarker` (hidden singles) → `SolveSingleCandidateTransformer` (naked singles). Order matters: elimination must precede the two that commit to values.
+- `search` propagates, then branches on the unsolved cell with the fewest candidates (MRV), recursing. Because the model is immutable an assumption is just another field, so a wrong branch needs no rollback.
 
-Adding a solving technique means implementing `FieldProcessor` (or `UnsolvedCellFieldProcessor`) and inserting it into the default list in `SudokuSolver`'s secondary constructor. Order matters: eliminators must run before the two that commit to values.
+Adding a technique means implementing `FieldProcessor` (or `UnsolvedCellFieldProcessor`, which supplies the "pass solved cells through" boilerplate) and inserting it into the default chain.
 
-**Known limitation**: the solver only does constraint propagation — no backtracking or guessing. Puzzles needing it stall at the fixpoint and return a partially-solved `Field`. Three tests (`unsolved`, `unsolved3`, `round15`) are `@Disabled` for exactly this reason; treat them as the target for any new technique rather than as broken tests.
+**Contradiction is a value, not an exception** — `SolveResult` is `Solved` / `Stalled` / `Contradiction`, because search hits contradictions constantly on its hot path. Two traps behind this:
 
-**I/O**: `CsvFieldParser` (comma-separated, blank cell = unknown) and `PipeFieldParser` (pipe-separated; a cell may carry a comma-separated candidate list, and a single candidate collapses straight to a `SolvedCell`). `SolutionWriter` prints solved cells as digits and unsolved ones as `{1,2,3}`. The solver and `SingleCandidateMarker` also `println` their deductions as they go — that trace is the primary debugging tool here.
+- `Field.contradictionAt()` reports **both** a cell with no candidates and two solved cells colliding in a house. The second is not redundant: propagation is incomplete, so `SingleCandidateMarker` can narrow two cells to the same value through different house types, and without that check search accepts complete-but-invalid grids.
+- `SingleCandidateMarker` re-reads cell state on every lookup rather than working from the grouped snapshot. Narrowing one cell changes which candidates are still hidden singles; deciding against a stale snapshot lets two candidates claim the same cell.
+
+**No I/O in the domain.** Techniques report a typed `Deduction` to a `DeductionListener` the caller supplies (`IGNORE`, `Printing…`, `Recording…`). Guesses are recorded as a technique, so `RecordingDeductionListener.guesses` is a difficulty signal: how far a puzzle outruns the chain.
+
+**Parsing** (`FieldParser`). `DelimitedFieldParser` holds the row/column bookkeeping; `CsvFieldParser` and `PipeFieldParser` differ only in delimiter and cell tokenizer (pipe cells may carry a candidate list), and `CompactFieldParser` reads the 81-character format published puzzle sets use. Parsers reject the wrong number of rows, short rows, and givens that already conflict — that validation lives here rather than in `Field`'s constructor, because propagation legitimately passes through inconsistent intermediate states that search handles as ordinary values.
