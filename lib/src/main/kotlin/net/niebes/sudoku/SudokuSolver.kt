@@ -1,6 +1,7 @@
 package net.niebes.sudoku
 
 import net.niebes.sudoku.model.Field
+import net.niebes.sudoku.model.UnsolvedCell
 
 class SudokuSolver(
     private val processor: List<FieldProcessor>
@@ -13,7 +14,23 @@ class SudokuSolver(
         SolveSingleCandidateTransformer()
     ))
 
-    fun solve(field: Field): SolveResult = propagate(field)
+    fun solve(field: Field): SolveResult = search(field)
+
+    /**
+     * Propagates, then guesses when propagation stalls. Fields are immutable, so an assumption is
+     * just another field and a wrong branch needs no rollback.
+     */
+    fun search(field: Field): SolveResult {
+        val propagated = propagate(field)
+        if (propagated !is SolveResult.Stalled) return propagated
+
+        val pivot = propagated.field.pivot() ?: return SolveResult.Solved(propagated.field)
+        pivot.candidates.values.sorted().forEach { candidate ->
+            val attempt = search(propagated.field.assign(pivot.position, candidate))
+            if (attempt is SolveResult.Solved) return attempt
+        }
+        return SolveResult.Contradiction(propagated.field, pivot.position)
+    }
 
     /** Runs the processor chain until it solves the field, contradicts itself, or stops making progress. */
     fun propagate(field: Field): SolveResult {
@@ -28,6 +45,13 @@ class SudokuSolver(
         }
     }
 
+    /**
+     * Minimum-remaining-values: branching on the most constrained cell keeps the search tree small.
+     * Ties break on position so a given puzzle always explores the same tree.
+     */
+    private fun Field.pivot(): UnsolvedCell? = unsolved()
+        .minWithOrNull(compareBy({ it.candidates.values.size }, { it.position.row }, { it.position.column }))
+
     private fun iterate(field: Field) =
-        processor.fold(field) { acc, fieldProcessor -> fieldProcessor.process(acc) }.also { println("process") }
+        processor.fold(field) { acc, fieldProcessor -> fieldProcessor.process(acc) }
 }

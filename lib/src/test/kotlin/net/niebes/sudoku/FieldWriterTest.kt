@@ -3,7 +3,6 @@ package net.niebes.sudoku
 import net.niebes.sudoku.model.CellPosition
 import net.niebes.sudoku.model.Field
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 internal class FieldWriterTest {
@@ -30,7 +29,6 @@ internal class FieldWriterTest {
     }
 
     @Test
-    @Disabled
     fun unsolved() {
         val input = PipeFieldParser().parse("""
             ||||||||
@@ -59,7 +57,6 @@ internal class FieldWriterTest {
     }
 
     @Test
-    @Disabled("needs more than naked/hidden singles - re-enabled once search lands")
     fun unsolved2() {
         val input = PipeFieldParser().parse("""
             3|2|||||||
@@ -88,7 +85,6 @@ internal class FieldWriterTest {
     }
 
     @Test
-    @Disabled
     fun unsolved3() {
         val input = PipeFieldParser().parse("""
             |8|||||4||
@@ -102,15 +98,15 @@ internal class FieldWriterTest {
             ||||||||
          """.trimIndent())
         val expectedSolution = PipeFieldParser().parse("""
-            1 | 3 | 7 | 4 | 8 | 5 | 2 | 9 | 6
-            5 | 4 | 9 | 2 | 7 | 6 | 3 | 1 | 8
-            6 | 2 | 8 | 9 | 3 | 1 | 7 | 5 | 4
-            7 | 1 | 2 | 6 | 5 | 3 | 4 | 8 | 9
-            4 | 8 | 5 | 7 | 1 | 9 | 6 | 2 | 3
-            9 | 6 | 3 | 8 | 2 | 4 | 1 | 7 | 5
-            8 | 7 | 4 | 5 | 6 | 2 | 9 | 3 | 1
-            2 | 9 | 1 | 3 | 4 | 8 | 5 | 6 | 7
-            3 | 5 | 6 | 1 | 9 | 7 | 8 | 4 | 2
+            6 | 8 | 5 | 3 | 7 | 2 | 4 | 9 | 1
+            2 | 9 | 3 | 5 | 4 | 1 | 8 | 6 | 7
+            4 | 1 | 7 | 8 | 9 | 6 | 5 | 3 | 2
+            7 | 4 | 8 | 1 | 3 | 5 | 9 | 2 | 6
+            3 | 6 | 1 | 9 | 2 | 8 | 7 | 5 | 4
+            5 | 2 | 9 | 4 | 6 | 7 | 3 | 1 | 8
+            9 | 7 | 4 | 6 | 1 | 3 | 2 | 8 | 5
+            1 | 5 | 2 | 7 | 8 | 9 | 6 | 4 | 3
+            8 | 3 | 6 | 2 | 5 | 4 | 1 | 7 | 9
          """.trimIndent())
 
         solutionEquals(input, expectedSolution)
@@ -144,7 +140,6 @@ internal class FieldWriterTest {
     }
 
     @Test
-    @Disabled
     fun round15() {
         val input = CsvFieldParser().parse("""
             ,,9,,1,,7,4,

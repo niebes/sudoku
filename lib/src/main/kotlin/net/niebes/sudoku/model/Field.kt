@@ -17,11 +17,35 @@ data class Field(
     fun getColumn(column: Int): Set<Cell> = cells.filter { it.position.column == column }.toSet()
     fun getSegment(segmentPosition: CellPosition.SegmentPosition): Set<Cell> = cells.filter { it.position.segment == segmentPosition }.toSet()
 
+    /** Returns a copy with [position] fixed to [value]. The model is immutable, so search needs no undo. */
+    fun assign(position: CellPosition, value: Int): Field =
+        Field(cells.mapTo(LinkedHashSet(cells.size)) { if (it.position == position) SolvedCell(position, value) else it })
+
+    fun unsolved(): List<UnsolvedCell> = cells.filterIsInstance<UnsolvedCell>()
+
     fun isSolved(): Boolean = cells.all { it is SolvedCell }
 
-    /** Position of a cell left with no candidates, or null if the field is still consistent. */
-    fun contradictionAt(): CellPosition? = cells
-        .filterIsInstance<UnsolvedCell>()
-        .firstOrNull { it.candidates.values.isEmpty() }
-        ?.position
+    /** The 27 constraint groups: nine rows, nine columns, nine segments. */
+    fun houses(): List<Set<Cell>> =
+        (0..8).map { getRow(it) } +
+            (0..8).map { getColumn(it) } +
+            (0..2).flatMap { r -> (0..2).map { c -> getSegment(CellPosition.SegmentPosition(r, c)) } }
+
+    /**
+     * Position proving the field cannot be completed, or null if it is still consistent. Both a cell
+     * with no candidates left and two cells holding the same value in one house count: propagation is
+     * incomplete, so it can place a duplicate rather than exhaust a cell, and search must catch either.
+     */
+    fun contradictionAt(): CellPosition? =
+        unsolved().firstOrNull { it.candidates.values.isEmpty() }?.position ?: duplicateValueAt()
+
+    private fun duplicateValueAt(): CellPosition? {
+        houses().forEach { house ->
+            val seen = HashMap<Int, CellPosition>()
+            house.filterIsInstance<SolvedCell>().forEach { cell ->
+                if (seen.put(cell.value, cell.position) != null) return cell.position
+            }
+        }
+        return null
+    }
 }
