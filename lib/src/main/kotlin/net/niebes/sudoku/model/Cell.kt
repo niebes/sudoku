@@ -1,68 +1,28 @@
 package net.niebes.sudoku.model
 
-sealed class Cell(
+sealed interface Cell {
     val position: CellPosition
-) {
+
     companion object {
-        fun new(position: CellPosition) = UnsolvedCell(position)
         /** No candidates means "nothing known about this cell", so it starts with all of them. */
-        fun new(position: CellPosition, candidates: Candidates) = when (candidates.size) {
+        fun new(position: CellPosition, candidates: Candidates): Cell = when (candidates.size) {
             0 -> UnsolvedCell(position)
             1 -> SolvedCell(position, candidates.single())
             else -> UnsolvedCell(position, candidates)
         }
-
-        fun new(position: CellPosition, value: Int?) =
-            value?.let { SolvedCell(position, value) } ?: UnsolvedCell(position)
     }
 }
 
-class SolvedCell(
-        position: CellPosition,
-        val value: Int
-) : Cell(position) {
+data class SolvedCell(
+    override val position: CellPosition,
+    val value: Int
+) : Cell {
     override fun toString(): String = value.toString()
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as SolvedCell
-
-        if (value != other.value) return false
-        if (position != other.position) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = value.hashCode()
-        result = 31 * result + position.hashCode()
-        return result
-    }
 }
 
-class UnsolvedCell(
-        position: CellPosition,
-        val candidates: Candidates = Candidates.ALL
-) : Cell(position) {
+data class UnsolvedCell(
+    override val position: CellPosition,
+    val candidates: Candidates = Candidates.ALL
+) : Cell {
     override fun toString(): String = candidates.toString()
-    fun removeCandidate(value: Int): UnsolvedCell = UnsolvedCell(position, candidates - value)
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as UnsolvedCell
-
-        if (candidates != other.candidates) return false
-        if (position != other.position) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = candidates.hashCode()
-        result = 31 * result + position.hashCode()
-        return result
-    }
 }
