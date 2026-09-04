@@ -39,6 +39,15 @@ internal class FinnedFishEliminatorTest {
 
         // Both sit in a cover column and share the fin's segment.
         assertThat(eliminated).containsExactlyInAnyOrder(CellPosition(3, 6), CellPosition(4, 6))
+        // The evidence is every place the base rows leave for the value, fin included.
+        assertThat(FinnedFishEliminator().eliminations(finnedXWingOn5())
+            .filter { it.values == Candidates.of(5) })
+            .allMatch {
+                it.because == listOf(
+                    CellPosition(1, 2), CellPosition(1, 6),
+                    CellPosition(5, 2), CellPosition(5, 6), CellPosition(5, 7)
+                )
+            }
     }
 
     @Test

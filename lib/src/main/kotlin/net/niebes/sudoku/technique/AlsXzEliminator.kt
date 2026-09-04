@@ -39,8 +39,9 @@ class AlsXzEliminator(private val maxSize: Int = 2) : EliminationTechnique {
     override fun eliminations(field: Field): List<Elimination> {
         val sets = almostLockedSets(field)
         // The same elimination is commonly reached by several pairs of sets - one set paired with
-        // another, and again with a larger set built around it - so they are collected uniquely.
-        val found = LinkedHashSet<Elimination>()
+        // another, and again with a larger set built around it - so conclusions are collected
+        // uniquely and keep the first pair found as their evidence.
+        val found = LinkedHashMap<Pair<CellPosition, Candidates>, Elimination>()
 
         sets.indices.forEach { i ->
             (i + 1 until sets.size).forEach pair@{ j ->
@@ -54,12 +55,12 @@ class AlsXzEliminator(private val maxSize: Int = 2) : EliminationTechnique {
                 shared.values.forEach { x ->
                     if (!restricted(field, a, b, x)) return@forEach
                     shared.values.filter { it != x }.forEach { z ->
-                        found += clear(field, a, b, z)
+                        clear(field, a, b, z).forEach { found.putIfAbsent(it.at to it.values, it) }
                     }
                 }
             }
         }
-        return found.toList()
+        return found.values.toList()
     }
 
     /** True when [value] can be spent in at most one of the two sets. */
@@ -74,11 +75,12 @@ class AlsXzEliminator(private val maxSize: Int = 2) : EliminationTechnique {
         val places = a.placesFor(z) + b.placesFor(z)
         if (places.isEmpty()) return emptyList()
 
+        val members = a.cells.map { it.position } + b.cells.map { it.position }
         return field.unsolved()
             .filter { cell ->
                 cell.couldBe(z) && places.all { field.sees(cell.position, it.position) }
             }
-            .map { Elimination(technique, it.position, Candidates.of(z)) }
+            .map { Elimination(technique, it.position, Candidates.of(z), members) }
     }
 
     private fun almostLockedSets(field: Field): List<AlmostLockedSet> = buildList {
