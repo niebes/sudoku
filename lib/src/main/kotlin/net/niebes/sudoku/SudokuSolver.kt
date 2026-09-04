@@ -14,7 +14,8 @@ class SudokuSolver(
         SolveSingleCandidateTransformer(),
         PointingEliminator(),
         ClaimingEliminator(),
-        NakedSubsetEliminator()
+        NakedSubsetEliminator(),
+        HiddenSubsetEliminator()
     ), deductions)
 
     fun solve(field: Field): SolveResult = search(field)
