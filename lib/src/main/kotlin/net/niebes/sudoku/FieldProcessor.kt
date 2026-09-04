@@ -4,6 +4,7 @@ import net.niebes.sudoku.model.Candidates
 import net.niebes.sudoku.model.Cell
 import net.niebes.sudoku.model.CellPosition
 import net.niebes.sudoku.model.Field
+import net.niebes.sudoku.model.Intersection
 import net.niebes.sudoku.model.SolvedCell
 import net.niebes.sudoku.model.CellPosition.Companion.SIZE
 import net.niebes.sudoku.model.UnsolvedCell
@@ -103,21 +104,46 @@ class HouseCandidateEliminator : EliminationTechnique {
 class PointingEliminator : EliminationTechnique {
     override val technique = Technique.POINTING
 
-    override fun eliminations(field: Field): List<Elimination> = buildList {
-        field.intersections().forEach { intersection ->
-            (1..SIZE).forEach value@{ value ->
-                // A value already placed in either house makes the question moot, and answering it
-                // from candidate state alone would be wrong: cells can still carry a candidate that
-                // peer elimination has not caught up with, which would make the value look confined
-                // to the overlap when it is in fact settled elsewhere.
-                if (intersection.segment.holds(value) || intersection.line.holds(value)) return@value
-                if (intersection.cells.none { it.couldBe(value) }) return@value
-                if (intersection.segmentOnly().any { it.couldBe(value) }) return@value
+    override fun eliminations(field: Field): List<Elimination> =
+        lockedCandidates(field, technique, Intersection::segmentOnly, Intersection::lineOnly)
+}
 
-                intersection.lineOnly()
-                    .filter { it.couldBe(value) }
-                    .forEach { add(Elimination(technique, it.position, Candidates.of(value))) }
-            }
+/**
+ * Claiming, or locked candidates type 2: if along a line every cell that could take a value lies
+ * inside one segment, the line's copy of that value is somewhere in that segment - so the value
+ * cannot appear in that segment anywhere off the line.
+ */
+class ClaimingEliminator : EliminationTechnique {
+    override val technique = Technique.CLAIMING
+
+    override fun eliminations(field: Field): List<Elimination> =
+        lockedCandidates(field, technique, Intersection::lineOnly, Intersection::segmentOnly)
+}
+
+/**
+ * The shape both directions of locked candidates share: a value that cannot appear on one side of
+ * a segment-line overlap must lie in the overlap, and so leaves the other side. Pointing and
+ * claiming differ only in which side is which.
+ */
+private fun lockedCandidates(
+    field: Field,
+    technique: Technique,
+    confinedAwayFrom: (Intersection) -> List<Cell>,
+    clear: (Intersection) -> List<Cell>
+): List<Elimination> = buildList {
+    field.intersections().forEach { intersection ->
+        (1..SIZE).forEach value@{ value ->
+            // A value already placed in either house makes the question moot, and answering it from
+            // candidate state alone would be wrong: cells can still carry a candidate that peer
+            // elimination has not caught up with, which would make the value look confined to the
+            // overlap when it is in fact settled elsewhere.
+            if (intersection.segment.holds(value) || intersection.line.holds(value)) return@value
+            if (intersection.cells.none { it.couldBe(value) }) return@value
+            if (confinedAwayFrom(intersection).any { it.couldBe(value) }) return@value
+
+            clear(intersection)
+                .filter { it.couldBe(value) }
+                .forEach { add(Elimination(technique, it.position, Candidates.of(value))) }
         }
     }
 }

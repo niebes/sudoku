@@ -12,7 +12,8 @@ class SudokuSolver(
         HouseCandidateEliminator(),
         SingleCandidateMarker(),
         SolveSingleCandidateTransformer(),
-        PointingEliminator()
+        PointingEliminator(),
+        ClaimingEliminator()
     ), deductions)
 
     fun solve(field: Field): SolveResult = search(field)

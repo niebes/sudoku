@@ -19,6 +19,9 @@ enum class Technique {
     /** Within a segment the value fitted only on one line, so it leaves the rest of that line. */
     POINTING,
 
+    /** Along a line the value fitted only in one segment, so it leaves the rest of that segment. */
+    CLAIMING,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }
