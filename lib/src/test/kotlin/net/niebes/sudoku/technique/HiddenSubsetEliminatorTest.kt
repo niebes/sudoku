@@ -102,9 +102,11 @@ internal class HiddenSubsetEliminatorTest {
             rowCandidates(0, 2..8, 2, 4, 5, 6, 7, 8, 9)
         }, recorder)
 
+        // The two cells confining the pair are the evidence, for both eliminations.
+        val subset = listOf(CellPosition(0, 0), CellPosition(0, 1))
         assertThat(recorder.eliminations).containsExactlyInAnyOrder(
-            Elimination(Technique.HIDDEN_SUBSET, CellPosition(0, 0), Candidates.of(5, 8)),
-            Elimination(Technique.HIDDEN_SUBSET, CellPosition(0, 1), Candidates.of(5, 8))
+            Elimination(Technique.HIDDEN_SUBSET, CellPosition(0, 0), Candidates.of(5, 8), subset),
+            Elimination(Technique.HIDDEN_SUBSET, CellPosition(0, 1), Candidates.of(5, 8), subset)
         )
     }
 

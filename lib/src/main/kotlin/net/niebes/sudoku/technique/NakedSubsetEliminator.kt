@@ -30,13 +30,14 @@ class NakedSubsetEliminator(private val sizes: IntRange = 2..4) : EliminationTec
                     val values = subset.fold(Candidates.NONE) { union, cell -> union or cell.candidates }
                     if (values.size != size) return@subset
 
-                    val taken = subset.mapTo(HashSet(size)) { it.position }
+                    val members = subset.map { it.position }
+                    val taken = members.toHashSet()
                     field.housesOf(subset.first().position)
                         .filter { shared -> shared.cells.mapTo(HashSet()) { it.position }.containsAll(taken) }
                         .forEach { shared ->
                             shared.unsolved()
                                 .filter { it.position !in taken }
-                                .forEach { add(Elimination(technique, it.position, values)) }
+                                .forEach { add(Elimination(technique, it.position, values, members)) }
                         }
                 }
             }

@@ -110,6 +110,10 @@ internal class PointingEliminatorTest {
         assertThat(recorder.eliminations).allMatch { it.technique == Technique.POINTING }
         assertThat(recorder.eliminations.map { it.at })
             .containsExactlyInAnyOrderElementsOf((3..8).map { CellPosition(1, it) })
+        // The evidence is the overlap: the cells the value is confined to.
+        assertThat(recorder.eliminations).allMatch {
+            it.because == listOf(CellPosition(1, 0), CellPosition(1, 1), CellPosition(1, 2))
+        }
     }
 
     @Test

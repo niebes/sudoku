@@ -123,6 +123,10 @@ internal class NakedSubsetEliminatorTest {
 
         assertThat(recorder.eliminations).isNotEmpty()
         assertThat(recorder.eliminations).allMatch { it.technique == Technique.NAKED_SUBSET }
+        // The pair itself is the evidence.
+        assertThat(recorder.eliminations).allMatch {
+            it.because == listOf(CellPosition(0, 0), CellPosition(0, 4))
+        }
     }
 
     @Test

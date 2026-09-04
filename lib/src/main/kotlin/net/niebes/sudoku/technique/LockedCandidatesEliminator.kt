@@ -34,9 +34,12 @@ abstract class LockedCandidatesEliminator(
                 if (intersection.cells.none { it.couldBe(value) }) return@value
                 if (confinedAwayFrom(intersection).any { it.couldBe(value) }) return@value
 
+                // The overlap cells still open to the value are the evidence: the value being
+                // confined to them is the whole of the argument.
+                val confined = intersection.cells.filter { it.couldBe(value) }.map { it.position }
                 clear(intersection)
                     .filter { it.couldBe(value) }
-                    .forEach { add(Elimination(technique, it.position, Candidates.of(value))) }
+                    .forEach { add(Elimination(technique, it.position, Candidates.of(value), confined)) }
             }
         }
     }
