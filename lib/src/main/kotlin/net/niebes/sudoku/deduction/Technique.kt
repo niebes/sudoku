@@ -52,6 +52,9 @@ enum class Technique {
     /** Two-colouring a value's strong links trapped a cell between the colours, or wrapped one out. */
     SIMPLE_COLOURING,
 
+    /** A chain alternating strong and weak links proved one of its two ends must hold its value. */
+    AIC,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }

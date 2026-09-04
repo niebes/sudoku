@@ -108,7 +108,8 @@ internal class LevelCoverageTest {
             "XyWingEliminator",             // level 5
             "XyzWingEliminator",            // level 5
             "WWingEliminator",              // level 5
-            "EmptyRectangleEliminator"      // level 5
+            "EmptyRectangleEliminator",     // level 5
+            "AicEliminator"                 // level 7
         )
     }
 }

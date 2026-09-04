@@ -6,6 +6,7 @@ import net.niebes.sudoku.deduction.PrintingDeductionListener
 import net.niebes.sudoku.deduction.Technique
 import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.UnsolvedCell
+import net.niebes.sudoku.technique.AicEliminator
 import net.niebes.sudoku.technique.BasicFishEliminator
 import net.niebes.sudoku.technique.ClaimingEliminator
 import net.niebes.sudoku.technique.EmptyRectangleEliminator
@@ -46,7 +47,8 @@ class SudokuSolver(
         XyWingEliminator(),
         XyzWingEliminator(),
         WWingEliminator(),
-        EmptyRectangleEliminator()
+        EmptyRectangleEliminator(),
+        AicEliminator()
     ), deductions)
 
     fun solve(field: Field): SolveResult = search(field)
