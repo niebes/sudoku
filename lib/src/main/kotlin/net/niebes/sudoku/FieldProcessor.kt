@@ -5,6 +5,7 @@ import net.niebes.sudoku.model.Cell
 import net.niebes.sudoku.model.CellPosition
 import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.SolvedCell
+import net.niebes.sudoku.model.CellPosition.Companion.SIZE
 import net.niebes.sudoku.model.UnsolvedCell
 
 interface FieldProcessor {
@@ -94,6 +95,33 @@ class HouseCandidateEliminator : EliminationTechnique {
     }
 }
 
+/**
+ * Pointing, or locked candidates type 1: if within a segment every cell that could take a value
+ * lies on one line, the segment's copy of that value is somewhere on that line - so the value
+ * cannot appear on that line anywhere outside the segment.
+ */
+class PointingEliminator : EliminationTechnique {
+    override val technique = Technique.POINTING
+
+    override fun eliminations(field: Field): List<Elimination> = buildList {
+        field.intersections().forEach { intersection ->
+            (1..SIZE).forEach value@{ value ->
+                // A value already placed in either house makes the question moot, and answering it
+                // from candidate state alone would be wrong: cells can still carry a candidate that
+                // peer elimination has not caught up with, which would make the value look confined
+                // to the overlap when it is in fact settled elsewhere.
+                if (intersection.segment.holds(value) || intersection.line.holds(value)) return@value
+                if (intersection.cells.none { it.couldBe(value) }) return@value
+                if (intersection.segmentOnly().any { it.couldBe(value) }) return@value
+
+                intersection.lineOnly()
+                    .filter { it.couldBe(value) }
+                    .forEach { add(Elimination(technique, it.position, Candidates.of(value))) }
+            }
+        }
+    }
+}
+
 /** Hidden singles: a candidate that fits in only one cell of a house belongs to that cell. */
 class SingleCandidateMarker : FieldProcessor {
     override fun process(field: Field, deductions: DeductionListener): Field {
@@ -142,3 +170,6 @@ class SolveSingleCandidateTransformer : FieldProcessor {
         }
     })
 }
+
+/** True when this cell is unsolved and [value] is still one of its candidates. */
+private fun Cell.couldBe(value: Int): Boolean = this is UnsolvedCell && candidates.contains(value)

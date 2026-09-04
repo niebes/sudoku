@@ -16,6 +16,9 @@ enum class Technique {
     /** A value already placed in a house cannot be a candidate elsewhere in it. */
     PEER_ELIMINATION,
 
+    /** Within a segment the value fitted only on one line, so it leaves the rest of that line. */
+    POINTING,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }
