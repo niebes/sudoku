@@ -126,13 +126,13 @@ function startPlayer(body) {
 
   const banner = $('banner');
   if (body.outcome === 'stalled') {
-    banner.textContent = body.message + ' You can still step through everything it could deduce.';
+    banner.textContent = body.message;
     banner.classList.remove('bad');
     banner.hidden = false;
   } else if (body.guesses > 0) {
-    banner.textContent = 'This puzzle outran all twenty techniques: ' + body.guesses +
-      (body.guesses === 1 ? ' step is an assumption' : ' steps are assumptions') +
-      ', shown honestly as guesses - watch for the amber steps.';
+    banner.textContent = 'This puzzle outran all twenty techniques: ' + (body.guesses === 1
+      ? 'one step is an assumption, shown honestly as a guess - watch for the amber step.'
+      : body.guesses + ' steps are assumptions, shown honestly as guesses - watch for the amber steps.');
     banner.classList.remove('bad');
     banner.hidden = false;
   } else {
