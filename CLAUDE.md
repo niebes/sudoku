@@ -26,10 +26,15 @@ A Sudoku solver: constraint propagation with backtracking search on top. There i
 
 **Solver** (`SudokuSolver`). Two layers:
 
-- `propagate` folds the field through an ordered `List<FieldProcessor>` until it solves the field, contradicts itself, or stops changing. The default chain is `HouseCandidateEliminator` (a value placed in a house is not a candidate elsewhere in it) → `SingleCandidateMarker` (hidden singles) → `SolveSingleCandidateTransformer` (naked singles). Order matters: elimination must precede the two that commit to values.
+- `propagate` folds the field through an ordered `List<FieldProcessor>` until it solves the field, contradicts itself, or stops changing. The default chain runs levels 1-3 of `docs/solving-techniques.md`, cheapest first: `FullHouseSolver` -> `HouseCandidateEliminator` (a value placed in a house is not a candidate elsewhere in it) -> `SingleCandidateMarker` (hidden singles) -> `SolveSingleCandidateTransformer` (naked singles) -> `PointingEliminator` -> `ClaimingEliminator` -> `NakedSubsetEliminator` -> `HiddenSubsetEliminator`. Only the singles place values; everything below them exists to create work for them.
 - `search` propagates, then branches on the unsolved cell with the fewest candidates (MRV), recursing. Because the model is immutable an assumption is just another field, so a wrong branch needs no rollback.
 
-Adding a technique means implementing `FieldProcessor` (or `UnsolvedCellFieldProcessor`, which supplies the "pass solved cells through" boilerplate) and inserting it into the default chain.
+Adding a technique means implementing `EliminationTechnique` and inserting it into the default chain. `eliminations(field)` must read only the field it is handed - the batch is applied afterwards, so a technique cannot observe its own partial results. Implement `FieldProcessor` directly only for a technique that *places* values, as `FullHouseSolver` does.
+
+**Two rules every technique above singles follows**, both learned the hard way here, each with a test named after the grid that catches it:
+
+1. **Ask `House.holds(value)` whether a value is already placed**, rather than inferring it from candidates. A cell can still carry a candidate peer elimination has not caught up with, and reading it makes a value look confined to a region where it is in fact settled elsewhere - locked candidates then concludes the exact opposite of the truth.
+2. **Never derive "is this cell decided?" from candidate-set size while eliminating.** That is what the batch application in `EliminationTechnique` exists to make impossible.
 
 **Contradiction is a value, not an exception** — `SolveResult` is `Solved` / `Stalled` / `Contradiction`, because search hits contradictions constantly on its hot path. Two traps behind this:
 
