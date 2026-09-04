@@ -33,7 +33,10 @@ class SingleCandidateMarker : FieldProcessor {
             val only = current.filter { it.couldBe(candidate) }.singleOrNull() as? UnsolvedCell ?: return@candidate
             if (only.candidates.size == 1) return@candidate
 
-            deductions.onDeduction(Placement(Technique.HIDDEN_SINGLE, only.position, candidate))
+            // The rest of the house is the evidence: the single is hidden exactly because none of
+            // those cells can take the candidate.
+            val rest = house.filter { it != only.position }
+            deductions.onDeduction(Placement(Technique.HIDDEN_SINGLE, only.position, candidate, rest))
             cells[only.position.index] = UnsolvedCell(only.position, Candidates.of(candidate))
         }
     }

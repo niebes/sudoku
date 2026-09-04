@@ -17,7 +17,7 @@ import net.niebes.sudoku.model.SolvedCell
 class FullHouseSolver : FieldProcessor {
     override fun process(field: Field, deductions: DeductionListener): Field {
         // A cell can be the last gap in two houses at once, so placements are keyed by position.
-        val placements = LinkedHashMap<CellPosition, Int>()
+        val placements = LinkedHashMap<CellPosition, Placement>()
 
         field.houses().forEach { house ->
             val gap = house.unsolved().singleOrNull() ?: return@forEach
@@ -31,14 +31,17 @@ class FullHouseSolver : FieldProcessor {
             // leaving the cell alone lets the contradiction surface as an exhausted cell.
             if (missing.size != 1 || !gap.couldBe(missing.single())) return@forEach
 
-            placements.putIfAbsent(gap.position, missing.single())
+            // The eight filled cells are the whole of the argument: with them in place, only the
+            // missing value fits the gap.
+            val filled = house.cells.filterIsInstance<SolvedCell>().map { it.position }
+            placements.putIfAbsent(gap.position, Placement(Technique.FULL_HOUSE, gap.position, missing.single(), filled))
         }
         if (placements.isEmpty()) return field
 
         val cells = field.cells.toMutableList()
-        placements.forEach { (position, value) ->
-            deductions.onDeduction(Placement(Technique.FULL_HOUSE, position, value))
-            cells[position.index] = SolvedCell(position, value)
+        placements.values.forEach { placement ->
+            deductions.onDeduction(placement)
+            cells[placement.at.index] = SolvedCell(placement.at, placement.value)
         }
         return Field(cells)
     }

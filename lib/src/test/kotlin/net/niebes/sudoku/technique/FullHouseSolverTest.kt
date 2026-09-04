@@ -57,8 +57,10 @@ internal class FullHouseSolverTest {
 
         FullHouseSolver().process(rowWithOneGap(), recorder)
 
+        // The evidence is the eight cells already filled: they are why only a 6 can go here.
         assertThat(recorder.placements).singleElement()
-            .isEqualTo(Placement(Technique.FULL_HOUSE, CellPosition(0, 8), 6))
+            .isEqualTo(Placement(Technique.FULL_HOUSE, CellPosition(0, 8), 6,
+                because = (0..7).map { CellPosition(0, it) }))
     }
 
     @Test

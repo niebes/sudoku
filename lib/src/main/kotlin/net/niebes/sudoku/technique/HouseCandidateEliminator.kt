@@ -13,6 +13,7 @@ class HouseCandidateEliminator : EliminationTechnique {
 
     override fun eliminations(field: Field): List<Elimination> = field.unsolved().mapNotNull { cell ->
         val placed = field.solvedPeers(cell.position) and cell.candidates
-        if (placed.isEmpty()) null else Elimination(technique, cell.position, placed)
+        if (placed.isEmpty()) null
+        else Elimination(technique, cell.position, placed, field.solvedPeersHolding(cell.position, placed))
     }
 }
