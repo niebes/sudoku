@@ -24,9 +24,9 @@ import net.niebes.sudoku.technique.SolveSingleCandidateTransformer
  */
 class SudokuSolver(
     val processors: List<FieldProcessor>,
-    private val deductions: DeductionListener = PrintingDeductionListener()
+    private val deductions: DeductionListener = DeductionListener.IGNORE
 ) {
-    constructor(deductions: DeductionListener = PrintingDeductionListener()) : this(listOf(
+    constructor(deductions: DeductionListener = DeductionListener.IGNORE) : this(listOf(
         FullHouseSolver(),
         HouseCandidateEliminator(),
         SingleCandidateMarker(),

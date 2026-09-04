@@ -2,6 +2,8 @@ package net.niebes.sudoku
 
 import net.niebes.sudoku.model.SolvedCell
 import net.niebes.sudoku.model.UnsolvedCell
+import net.niebes.sudoku.technique.EliminationTechnique
+import net.niebes.sudoku.technique.HouseCandidateEliminator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -17,7 +19,7 @@ internal class TechniqueSoundnessTest {
 
     @Test
     fun propagationNeverEliminatesAValueFromTheSolution() {
-        Puzzles.all.forEach { puzzle ->
+        (Puzzles.all + GeneratedPuzzles.all).forEach { puzzle ->
             val propagated = SudokuSolver().propagate(puzzle.field()).field
 
             propagated.cells.forEachIndexed { index, cell ->
@@ -36,8 +38,29 @@ internal class TechniqueSoundnessTest {
     }
 
     @Test
+    fun noSingleTechniqueEliminatesAValueFromTheSolution() {
+        // Each technique alone, run against a grid the cheap techniques have already worked over.
+        // A technique that is wrong only in combination is rare; one that is wrong on its own is the
+        // common case, and this says which one rather than just that propagation broke.
+        val techniques = SudokuSolver().processors.filterIsInstance<EliminationTechnique>()
+
+        (Puzzles.all + GeneratedPuzzles.all).forEach { puzzle ->
+            val settled = SudokuSolver(listOf(HouseCandidateEliminator())).propagate(puzzle.field()).field
+
+            techniques.forEach { technique ->
+                technique.eliminations(settled).forEach { elimination ->
+                    val expected = puzzle.valueAt(elimination.at.index)
+                    assertThat(elimination.values.contains(expected))
+                        .describedAs("${technique.technique} removed $expected from ${elimination.at} in ${puzzle.givens}")
+                        .isFalse()
+                }
+            }
+        }
+    }
+
+    @Test
     fun searchSolvesEveryPuzzleInTheCorpus() {
-        Puzzles.all.forEach { puzzle ->
+        (Puzzles.all + GeneratedPuzzles.all).forEach { puzzle ->
             val result = SudokuSolver().solve(puzzle.field())
 
             assertThat(result)
