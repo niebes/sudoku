@@ -22,6 +22,9 @@ enum class Technique {
     /** Along a line the value fitted only in one segment, so it leaves the rest of that segment. */
     CLAIMING,
 
+    /** k cells of a house held k values between them, so those values leave the rest of the house. */
+    NAKED_SUBSET,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }

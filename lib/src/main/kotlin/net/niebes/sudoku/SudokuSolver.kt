@@ -13,7 +13,8 @@ class SudokuSolver(
         SingleCandidateMarker(),
         SolveSingleCandidateTransformer(),
         PointingEliminator(),
-        ClaimingEliminator()
+        ClaimingEliminator(),
+        NakedSubsetEliminator()
     ), deductions)
 
     fun solve(field: Field): SolveResult = search(field)
