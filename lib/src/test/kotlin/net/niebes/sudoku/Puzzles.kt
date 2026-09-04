@@ -1,5 +1,6 @@
 package net.niebes.sudoku
 
+import net.niebes.sudoku.io.CompactFieldParser
 import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.SolvedCell
 

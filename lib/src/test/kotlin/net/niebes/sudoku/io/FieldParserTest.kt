@@ -1,5 +1,7 @@
-package net.niebes.sudoku
+package net.niebes.sudoku.io
 
+import net.niebes.sudoku.SolveResult
+import net.niebes.sudoku.SudokuSolver
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import org.junit.jupiter.api.Test
