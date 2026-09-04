@@ -70,6 +70,8 @@ class SudokuSolver(
             deductions.onDeduction(Placement(Technique.GUESS, pivot.position, candidate))
             val attempt = search(propagated.field.assign(pivot.position, candidate))
             if (attempt is Solved) return attempt
+            // The guess led nowhere: tell the listener, so a trace consumer can void the branch.
+            deductions.onBranchAbandoned()
         }
         return Contradiction(propagated.field, pivot.position)
     }
