@@ -1,5 +1,8 @@
 package net.niebes.sudoku
 
+import net.niebes.sudoku.deduction.Elimination
+import net.niebes.sudoku.deduction.RecordingDeductionListener
+import net.niebes.sudoku.deduction.Technique
 import net.niebes.sudoku.model.Candidates
 import net.niebes.sudoku.model.CellPosition
 import net.niebes.sudoku.model.Field

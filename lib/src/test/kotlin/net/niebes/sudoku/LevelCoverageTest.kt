@@ -1,5 +1,7 @@
 package net.niebes.sudoku
 
+import net.niebes.sudoku.deduction.RecordingDeductionListener
+import net.niebes.sudoku.deduction.Technique
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 

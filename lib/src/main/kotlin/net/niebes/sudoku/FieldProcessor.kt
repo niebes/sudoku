@@ -1,12 +1,16 @@
 package net.niebes.sudoku
 
+import net.niebes.sudoku.deduction.DeductionListener
+import net.niebes.sudoku.deduction.Elimination
+import net.niebes.sudoku.deduction.Placement
+import net.niebes.sudoku.deduction.Technique
 import net.niebes.sudoku.model.Candidates
 import net.niebes.sudoku.model.Cell
 import net.niebes.sudoku.model.CellPosition
+import net.niebes.sudoku.model.CellPosition.Companion.SIZE
 import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.Intersection
 import net.niebes.sudoku.model.SolvedCell
-import net.niebes.sudoku.model.CellPosition.Companion.SIZE
 import net.niebes.sudoku.model.UnsolvedCell
 
 interface FieldProcessor {

@@ -1,5 +1,9 @@
 package net.niebes.sudoku
 
+import net.niebes.sudoku.deduction.DeductionListener
+import net.niebes.sudoku.deduction.Placement
+import net.niebes.sudoku.deduction.PrintingDeductionListener
+import net.niebes.sudoku.deduction.Technique
 import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.UnsolvedCell
 
