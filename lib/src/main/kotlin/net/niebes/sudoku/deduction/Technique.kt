@@ -49,6 +49,9 @@ enum class Technique {
     /** A segment's candidates fitted one row plus one column, which a strong link then pinned down. */
     EMPTY_RECTANGLE,
 
+    /** Two-colouring a value's strong links trapped a cell between the colours, or wrapped one out. */
+    SIMPLE_COLOURING,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }

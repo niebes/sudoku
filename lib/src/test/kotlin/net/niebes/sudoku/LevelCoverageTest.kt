@@ -3,6 +3,7 @@ package net.niebes.sudoku
 import net.niebes.sudoku.deduction.RecordingDeductionListener
 import net.niebes.sudoku.deduction.Technique
 import net.niebes.sudoku.technique.ClaimingEliminator
+import net.niebes.sudoku.technique.EliminationTechnique
 import net.niebes.sudoku.technique.FullHouseSolver
 import net.niebes.sudoku.technique.HiddenSubsetEliminator
 import net.niebes.sudoku.technique.HouseCandidateEliminator
@@ -81,8 +82,11 @@ internal class LevelCoverageTest {
                 .techniquesUsed()
         }
 
-        // A technique that stops firing anywhere has become dead code, and this says so.
-        assertThat(used).containsAll(Technique.entries - Technique.GUESS)
+        // Every technique the default chain runs has to pay its way; one that stops firing has
+        // become dead code and this says so. The enum may name more than the chain runs - a
+        // technique can be implemented, sound and tested without being worth its place.
+        val inTheChain = SudokuSolver().processors.mapNotNull { (it as? EliminationTechnique)?.technique }
+        assertThat(used).containsAll(inTheChain)
     }
 
     @Test
