@@ -77,36 +77,36 @@ class SegmentCandidateEliminator : UnsolvedCellFieldProcessor {
 
 class SingleCandidateMarker : FieldProcessor {
     override fun process(field: Field): Field {
-        val cellsMap = field.cells.associateBy { it.position }.toMutableMap()
+        val cells = field.cells.associateByTo(LinkedHashMap()) { it.position }
 
-        replace(cellsMap) { it.position.row }
-        replace(cellsMap) { it.position.column }
-        replace(cellsMap) { it.position.segment }
-        return Field(cellsMap.values.toSet())
+        markHiddenSingles(cells) { it.position.row }
+        markHiddenSingles(cells) { it.position.column }
+        markHiddenSingles(cells) { it.position.segment }
+        return Field(cells.values.toSet())
     }
 
-    private fun replace(cellsMap: MutableMap<CellPosition, Cell>, function: (Cell) -> Any) {
-        cellsMap.values.groupBy(function)
-                .forEach { row ->
-                    row.value
-                        .filterIsInstance(UnsolvedCell::class.java)
-                        .flatMap { it.candidates.values }
-                        .groupingBy { it }
-                        .eachCount().filter { it.value == 1 }
-                        .keys
-                        .forEach { candidate ->
+    /**
+     * A candidate that can go in only one cell of a house belongs there. Cell state is re-read from
+     * [cells] on every lookup: narrowing one cell changes which candidates are still hidden singles,
+     * so deciding against a stale snapshot lets two candidates claim the same cell.
+     */
+    private fun markHiddenSingles(cells: MutableMap<CellPosition, Cell>, house: (Cell) -> Any) {
+        cells.values.groupBy(house).values.forEach { members ->
+            val positions = members.map { it.position }
+            (1..9).forEach candidate@{ candidate ->
+                val current = positions.map { cells.getValue(it) }
+                if (current.any { it is SolvedCell && it.value == candidate }) return@candidate
 
-                            row.value
-                                .filterIsInstance(UnsolvedCell::class.java)
-                                .first { it.candidates.values.contains(candidate) }.run {
-                                    if (this.candidates.values.size == 1) return
-                                    println("mark only occurency of $candidate in ${this.position}")
-                                    cellsMap[this.position] = UnsolvedCell(this.position, Candidates(setOf(candidate)))
-                                }
-                        }
-                }
+                val holders = current.filterIsInstance<UnsolvedCell>()
+                    .filter { candidate in it.candidates.values }
+                val only = holders.singleOrNull() ?: return@candidate
+                if (only.candidates.values.size == 1) return@candidate
+
+                println("mark only occurrence of $candidate in ${only.position}")
+                cells[only.position] = UnsolvedCell(only.position, Candidates(setOf(candidate)))
+            }
+        }
     }
-
 }
 
 

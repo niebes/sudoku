@@ -13,17 +13,16 @@ class SudokuSolver(
         SolveSingleCandidateTransformer()
     ))
 
+    /** Runs the processor chain until an iteration no longer changes the field. */
     fun solve(field: Field): Field {
-        var previousResult = field
-        do {
-            val after = iterate(previousResult)
-            if (previousResult == after) return after
-            else previousResult = after
-        } while (previousResult == after)
-
-        return previousResult
+        var current = field
+        while (true) {
+            val next = iterate(current)
+            if (next == current) return next
+            current = next
+        }
     }
 
     private fun iterate(field: Field) =
-        processor.fold(field, { acc, fieldProcessor -> fieldProcessor.process(acc) }).also { println("process") }
+        processor.fold(field) { acc, fieldProcessor -> fieldProcessor.process(acc) }.also { println("process") }
 }
