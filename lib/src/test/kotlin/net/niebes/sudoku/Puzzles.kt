@@ -1,0 +1,45 @@
+package net.niebes.sudoku
+
+import net.niebes.sudoku.model.Field
+import net.niebes.sudoku.model.SolvedCell
+
+internal data class Puzzle(val givens: String, val solution: String) {
+    fun field(): Field = CompactFieldParser().parse(givens)
+    fun solved(): Field = CompactFieldParser().parse(solution)
+
+    /** The value this cell takes in the one true solution. */
+    fun valueAt(index: Int): Int = (solved().cells[index] as SolvedCell).value
+}
+
+/**
+ * Puzzles with verified unique solutions, named for the shallowest technique family that finishes
+ * them. Used to check that techniques are sound and that they earn their place.
+ */
+internal object Puzzles {
+    val classic = Puzzle(
+        "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79",
+        "534678912672195348198342567859761423426853791713924856961537284287419635345286179"
+    )
+    val singlesOnly = Puzzle(
+        ".6...4......3..14.4...51.89...5.3961.........1926.8...28.49...3.39..5......2...9.",
+        "561984237978362145423751689847523961356149872192678354285496713739815426614237598"
+    )
+    val needsPointing = Puzzle(
+        ".........5..276.....8.....47...5...9.....9......82.1.5..4...93.2.1......3......42",
+        "137485296549276318628931754712653489485719623963824175874562931291348567356197842"
+    )
+    val needsSubsets = Puzzle(
+        "..9.1.74.2.............4.3...7...9..8.3..6.....4.2..1...6..14.94.....3.8....7...1",
+        "369812745248357196175694832627135984813946257594728613736581429451269378982473561"
+    )
+    val needsChains = Puzzle(
+        "32..........5..8..4.........6..14.....5...3.........2....79...8.......46.8.3.....",
+        "321489657976523814458167293263914785145278369897635421614792538732851946589346172"
+    )
+    val minimalClues = Puzzle(
+        ".8....4.....5....7.1.......7...3...6....28...5......1......328.1..7..............",
+        "685372491293541867417896532748135926361928754529467318974613285152789643836254179"
+    )
+
+    val all = listOf(classic, singlesOnly, needsPointing, needsSubsets, needsChains, minimalClues)
+}

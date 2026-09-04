@@ -11,23 +11,51 @@ interface FieldProcessor {
     fun process(field: Field, deductions: DeductionListener = DeductionListener.IGNORE): Field
 }
 
-interface UnsolvedCellFieldProcessor : FieldProcessor {
-    fun processUnsolved(field: Field, cell: UnsolvedCell): UnsolvedCell
-    override fun process(field: Field, deductions: DeductionListener): Field = Field(field.cells.map { cell ->
-        when (cell) {
-            is SolvedCell -> cell
-            is UnsolvedCell -> processUnsolved(field, cell)
+/**
+ * A technique that only removes candidates.
+ *
+ * [eliminations] reads the field it is handed and nothing else, and the whole batch is applied
+ * afterwards. That is deliberate: a technique that eliminated as it went would go on to reason
+ * about a grid its own earlier steps had already changed, and every family of technique above
+ * singles is vulnerable to that - two candidates claiming one cell, or a digit looking confined to
+ * a house because a cell that was just solved dropped out of the list being scanned.
+ */
+interface EliminationTechnique : FieldProcessor {
+    val technique: Technique
+
+    /** Must depend only on [field]. Overlapping or repeated eliminations are harmless. */
+    fun eliminations(field: Field): List<Elimination>
+
+    override fun process(field: Field, deductions: DeductionListener): Field {
+        val found = eliminations(field)
+        if (found.isEmpty()) return field
+
+        val cells = field.cells.toMutableList()
+        found.forEach { elimination ->
+            val cell = cells[elimination.at.index]
+            if (cell !is UnsolvedCell) return@forEach
+
+            val removable = cell.candidates and elimination.values
+            if (removable.isEmpty()) return@forEach
+
+            deductions.onDeduction(Elimination(technique, elimination.at, removable))
+            cells[elimination.at.index] = UnsolvedCell(cell.position, cell.candidates - removable)
         }
-    })
+        return Field(cells)
+    }
 }
 
 /**
  * A value already placed in a cell's row, column or segment cannot be a candidate for that cell.
  * Row, column and segment are the same constraint - a house - so this is one technique, not three.
  */
-class HouseCandidateEliminator : UnsolvedCellFieldProcessor {
-    override fun processUnsolved(field: Field, cell: UnsolvedCell): UnsolvedCell =
-        UnsolvedCell(cell.position, cell.candidates - field.solvedPeers(cell.position))
+class HouseCandidateEliminator : EliminationTechnique {
+    override val technique = Technique.PEER_ELIMINATION
+
+    override fun eliminations(field: Field): List<Elimination> = field.unsolved().mapNotNull { cell ->
+        val placed = field.solvedPeers(cell.position) and cell.candidates
+        if (placed.isEmpty()) null else Elimination(technique, cell.position, placed)
+    }
 }
 
 /** Hidden singles: a candidate that fits in only one cell of a house belongs to that cell. */
@@ -54,7 +82,7 @@ class SingleCandidateMarker : FieldProcessor {
                 .singleOrNull() ?: return@candidate
             if (only.candidates.size == 1) return@candidate
 
-            deductions.onDeduction(Deduction(Technique.HIDDEN_SINGLE, only.position, candidate))
+            deductions.onDeduction(Placement(Technique.HIDDEN_SINGLE, only.position, candidate))
             cells[only.position.index] = UnsolvedCell(only.position, Candidates.of(candidate))
         }
     }
@@ -70,7 +98,7 @@ class SolveSingleCandidateTransformer : FieldProcessor {
                 0 -> cell
                 1 -> {
                     val value = cell.candidates.single()
-                    deductions.onDeduction(Deduction(Technique.NAKED_SINGLE, cell.position, value))
+                    deductions.onDeduction(Placement(Technique.NAKED_SINGLE, cell.position, value))
                     SolvedCell(cell.position, value)
                 }
                 else -> cell

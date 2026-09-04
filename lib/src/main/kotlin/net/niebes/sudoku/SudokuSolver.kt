@@ -25,7 +25,7 @@ class SudokuSolver(
 
         val pivot = propagated.field.pivot() ?: return SolveResult.Solved(propagated.field)
         pivot.candidates.values.forEach { candidate ->
-            deductions.onDeduction(Deduction(Technique.GUESS, pivot.position, candidate))
+            deductions.onDeduction(Placement(Technique.GUESS, pivot.position, candidate))
             val attempt = search(propagated.field.assign(pivot.position, candidate))
             if (attempt is SolveResult.Solved) return attempt
         }
