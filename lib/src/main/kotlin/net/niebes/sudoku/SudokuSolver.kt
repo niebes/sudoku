@@ -8,6 +8,7 @@ import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.UnsolvedCell
 import net.niebes.sudoku.technique.BasicFishEliminator
 import net.niebes.sudoku.technique.ClaimingEliminator
+import net.niebes.sudoku.technique.EmptyRectangleEliminator
 import net.niebes.sudoku.technique.FieldProcessor
 import net.niebes.sudoku.technique.FullHouseSolver
 import net.niebes.sudoku.technique.HiddenSubsetEliminator
@@ -44,7 +45,8 @@ class SudokuSolver(
         TurbotFishEliminator(),
         XyWingEliminator(),
         XyzWingEliminator(),
-        WWingEliminator()
+        WWingEliminator(),
+        EmptyRectangleEliminator()
     ), deductions)
 
     fun solve(field: Field): SolveResult = search(field)

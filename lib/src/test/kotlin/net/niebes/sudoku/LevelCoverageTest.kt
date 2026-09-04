@@ -86,7 +86,8 @@ internal class LevelCoverageTest {
             "TurbotFishEliminator",         // level 5
             "XyWingEliminator",             // level 5
             "XyzWingEliminator",            // level 5
-            "WWingEliminator"               // level 5
+            "WWingEliminator",              // level 5
+            "EmptyRectangleEliminator"      // level 5
         )
     }
 }

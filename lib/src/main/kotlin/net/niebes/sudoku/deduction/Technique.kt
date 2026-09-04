@@ -46,6 +46,9 @@ enum class Technique {
     /** Two cells holding the same pair, joined by a strong link that forces one onto its other value. */
     W_WING,
 
+    /** A segment's candidates fitted one row plus one column, which a strong link then pinned down. */
+    EMPTY_RECTANGLE,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }
