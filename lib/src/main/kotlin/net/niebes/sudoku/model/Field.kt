@@ -17,4 +17,11 @@ data class Field(
     fun getColumn(column: Int): Set<Cell> = cells.filter { it.position.column == column }.toSet()
     fun getSegment(segmentPosition: CellPosition.SegmentPosition): Set<Cell> = cells.filter { it.position.segment == segmentPosition }.toSet()
 
+    fun isSolved(): Boolean = cells.all { it is SolvedCell }
+
+    /** Position of a cell left with no candidates, or null if the field is still consistent. */
+    fun contradictionAt(): CellPosition? = cells
+        .filterIsInstance<UnsolvedCell>()
+        .firstOrNull { it.candidates.values.isEmpty() }
+        ?.position
 }

@@ -26,7 +26,7 @@ internal class FieldWriterTest {
         val output = SudokuSolver().solve(input)
         println()
         println("result")
-        SolutionWriter().writeField(output)
+        SolutionWriter().writeField(output.field)
     }
 
     @Test
@@ -184,12 +184,13 @@ internal class FieldWriterTest {
 
     private fun solutionEquals(input: Field, expectedSolution: Field) {
         SolutionWriter().writeField(input)
-        val output = SudokuSolver().solve(input)
+        val result = SudokuSolver().solve(input)
         println()
         println("result")
-        SolutionWriter().writeField(output)
+        SolutionWriter().writeField(result.field)
 
-        assertThat(output).isEqualTo(expectedSolution)
+        assertThat(result).isInstanceOf(SolveResult.Solved::class.java)
+        assertThat(result.field).isEqualTo(expectedSolution)
     }
 
     @Test

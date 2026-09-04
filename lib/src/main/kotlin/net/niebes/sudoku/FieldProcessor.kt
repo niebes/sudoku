@@ -27,7 +27,8 @@ class SolveSingleCandidateTransformer : FieldProcessor {
         when (cell) {
             is SolvedCell -> cell
             is UnsolvedCell -> when (cell.candidates.values.size) {
-                0 -> throw IllegalStateException("sudoku unsolvable")
+                // A cell with no candidates is left as-is; the solver reports it as a contradiction.
+                0 -> cell
                 1 -> {
                     println("solved ${cell.position} to ${cell.candidates.values.first()}")
                     SolvedCell(cell.position, cell.candidates.values.first())

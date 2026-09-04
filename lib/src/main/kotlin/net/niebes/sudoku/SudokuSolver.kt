@@ -13,12 +13,17 @@ class SudokuSolver(
         SolveSingleCandidateTransformer()
     ))
 
-    /** Runs the processor chain until an iteration no longer changes the field. */
-    fun solve(field: Field): Field {
+    fun solve(field: Field): SolveResult = propagate(field)
+
+    /** Runs the processor chain until it solves the field, contradicts itself, or stops making progress. */
+    fun propagate(field: Field): SolveResult {
         var current = field
         while (true) {
+            current.contradictionAt()?.let { return SolveResult.Contradiction(current, it) }
+            if (current.isSolved()) return SolveResult.Solved(current)
+
             val next = iterate(current)
-            if (next == current) return next
+            if (next == current) return SolveResult.Stalled(current)
             current = next
         }
     }
