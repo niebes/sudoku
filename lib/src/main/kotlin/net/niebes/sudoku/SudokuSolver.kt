@@ -11,6 +11,7 @@ import net.niebes.sudoku.technique.BasicFishEliminator
 import net.niebes.sudoku.technique.ClaimingEliminator
 import net.niebes.sudoku.technique.EmptyRectangleEliminator
 import net.niebes.sudoku.technique.FieldProcessor
+import net.niebes.sudoku.technique.FinnedFishEliminator
 import net.niebes.sudoku.technique.FullHouseSolver
 import net.niebes.sudoku.technique.HiddenSubsetEliminator
 import net.niebes.sudoku.technique.HouseCandidateEliminator
@@ -48,7 +49,8 @@ class SudokuSolver(
         XyzWingEliminator(),
         WWingEliminator(),
         EmptyRectangleEliminator(),
-        AicEliminator()
+        AicEliminator(),
+        FinnedFishEliminator()
     ), deductions)
 
     fun solve(field: Field): SolveResult = search(field)

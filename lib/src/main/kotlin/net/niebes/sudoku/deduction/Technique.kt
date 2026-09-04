@@ -55,6 +55,9 @@ enum class Technique {
     /** A chain alternating strong and weak links proved one of its two ends must hold its value. */
     AIC,
 
+    /** A fish spoiled by extra candidates in one base line, whose eliminations survive where they see every fin. */
+    FINNED_FISH,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }
