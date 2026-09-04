@@ -38,4 +38,8 @@ Adding a technique means implementing `FieldProcessor` (or `UnsolvedCellFieldPro
 
 **No I/O in the domain.** Techniques report a typed `Deduction` to a `DeductionListener` the caller supplies (`IGNORE`, `Printing…`, `Recording…`). Guesses are recorded as a technique, so `RecordingDeductionListener.guesses` is a difficulty signal: how far a puzzle outruns the chain.
 
+**Which techniques to add next** — `docs/solving-techniques.md` is a prioritised
+catalogue of every non-brute-force technique, what each needs from the model, and the
+four architectural changes the ladder forces. Read it before adding a processor.
+
 **Parsing** (`FieldParser`). `DelimitedFieldParser` holds the row/column bookkeeping; `CsvFieldParser` and `PipeFieldParser` differ only in delimiter and cell tokenizer (pipe cells may carry a candidate list), and `CompactFieldParser` reads the 81-character format published puzzle sets use. Parsers reject the wrong number of rows, short rows, and givens that already conflict — that validation lives here rather than in `Field`'s constructor, because propagation legitimately passes through inconsistent intermediate states that search handles as ordinary values.
