@@ -13,12 +13,12 @@ interface FieldProcessor {
 
 interface UnsolvedCellFieldProcessor : FieldProcessor {
     fun processUnsolved(field: Field, cell: UnsolvedCell): UnsolvedCell
-    override fun process(field: Field): Field = field.cells.map { cell ->
+    override fun process(field: Field): Field = Field(field.cells.map { cell ->
         when (cell) {
             is SolvedCell -> cell
             is UnsolvedCell -> processUnsolved(field, cell)
         }
-    }.let { Field(it.toSet()) }
+    })
 }
 
 /**
@@ -27,18 +27,16 @@ interface UnsolvedCellFieldProcessor : FieldProcessor {
  */
 class HouseCandidateEliminator : UnsolvedCellFieldProcessor {
     override fun processUnsolved(field: Field, cell: UnsolvedCell): UnsolvedCell =
-        field.housesOf(cell.position)
-            .flatMap { house -> house.filterIsInstance<SolvedCell>() }
-            .fold(cell) { candidate, solved -> candidate.removeCandidate(solved.value) }
+        UnsolvedCell(cell.position, cell.candidates - field.solvedPeers(cell.position))
 }
 
 /** Hidden singles: a candidate that fits in only one cell of a house belongs to that cell. */
 class SingleCandidateMarker : FieldProcessor {
     override fun process(field: Field): Field {
-        val cells = field.cells.associateByTo(LinkedHashMap()) { it.position }
+        val cells = field.cells.toMutableList()
         // Positions are fixed for the life of a field, so the houses can be taken once up front.
         field.houses().map { house -> house.map { it.position } }.forEach { mark(cells, it) }
-        return Field(cells.values.toSet())
+        return Field(cells)
     }
 
     /**
@@ -46,9 +44,9 @@ class SingleCandidateMarker : FieldProcessor {
      * are still hidden singles, so deciding against a stale snapshot lets two candidates claim the
      * same cell.
      */
-    private fun mark(cells: MutableMap<CellPosition, Cell>, house: List<CellPosition>) {
+    private fun mark(cells: MutableList<Cell>, house: List<CellPosition>) {
         (1..9).forEach candidate@{ candidate ->
-            val current = house.map { cells.getValue(it) }
+            val current = house.map { cells[it.index] }
             if (current.any { it is SolvedCell && it.value == candidate }) return@candidate
 
             val only = current.filterIsInstance<UnsolvedCell>()
@@ -57,14 +55,14 @@ class SingleCandidateMarker : FieldProcessor {
             if (only.candidates.size == 1) return@candidate
 
             println("mark only occurrence of $candidate in ${only.position}")
-            cells[only.position] = UnsolvedCell(only.position, Candidates.of(candidate))
+            cells[only.position.index] = UnsolvedCell(only.position, Candidates.of(candidate))
         }
     }
 }
 
 /** Naked singles: a cell with one candidate left is solved. */
 class SolveSingleCandidateTransformer : FieldProcessor {
-    override fun process(field: Field): Field = field.cells.map { cell ->
+    override fun process(field: Field): Field = Field(field.cells.map { cell ->
         when (cell) {
             is SolvedCell -> cell
             is UnsolvedCell -> when (cell.candidates.size) {
@@ -77,5 +75,5 @@ class SolveSingleCandidateTransformer : FieldProcessor {
                 else -> cell
             }
         }
-    }.let { Field(it.toSet()) }
+    })
 }

@@ -15,7 +15,7 @@ class CsvFieldParser : FieldParser {
             rowString.split(",").mapIndexed { column, cell ->
                 Cell.new(CellPosition(row, column), cell.toIntOrNull())
             }
-        }.flatten().toSet()
+        }.flatten()
         return Field(cells)
     }
 }
@@ -27,7 +27,7 @@ class PipeFieldParser : FieldParser {
             rowString.split("|").mapIndexed { column, cell ->
                 Cell.new(CellPosition(row, column), cell.tryParseCandidates())
             }
-        }.flatten().toSet()
+        }.flatten()
         return Field(cells)
     }
 

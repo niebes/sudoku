@@ -20,6 +20,7 @@ value class Candidates(val mask: Int) {
     fun single(): Int = values.single()
 
     operator fun minus(value: Int): Candidates = Candidates(mask and bitOf(value).inv())
+    operator fun minus(other: Candidates): Candidates = Candidates(mask and other.mask.inv())
     operator fun plus(value: Int): Candidates = Candidates(mask or bitOf(value))
     infix fun and(other: Candidates): Candidates = Candidates(mask and other.mask)
     infix fun or(other: Candidates): Candidates = Candidates(mask or other.mask)
