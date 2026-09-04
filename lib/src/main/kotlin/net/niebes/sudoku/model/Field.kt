@@ -16,7 +16,7 @@ class Field(cells: Collection<Cell>) {
 
     fun getRow(row: Int): List<Cell> = ROWS[row].cellsOf()
     fun getColumn(column: Int): List<Cell> = COLUMNS[column].cellsOf()
-    fun getSegment(segmentPosition: CellPosition.SegmentPosition): List<Cell> =
+    fun getSegment(segmentPosition: SegmentPosition): List<Cell> =
         SEGMENTS[segmentPosition.row * 3 + segmentPosition.column].cellsOf()
 
     /** The 27 constraint groups: nine rows, nine columns, nine segments. */

@@ -1,26 +1,14 @@
 package net.niebes.sudoku.model
 
+/** Where a cell sits in the grid. Rows and columns are zero-based. */
 data class CellPosition(
     val row: Int,
     val column: Int
 ) {
-    data class SegmentPosition(
-        val row: Int,
-        val column: Int
-    ) {
-        companion object {
-            private const val maxRows = 3
-            private const val maxColumns = 3
-
-            fun fromCellPosition(cellPosition: CellPosition): SegmentPosition =
-                SegmentPosition(cellPosition.row / maxRows, cellPosition.column / maxColumns)
-        }
-    }
-
     /** Offset into a row-major grid, so cells can be looked up without scanning. */
     val index: Int get() = row * SIZE + column
 
-    val segment: SegmentPosition by lazy { SegmentPosition.fromCellPosition(this) }
+    val segment: SegmentPosition by lazy { SegmentPosition.of(this) }
 
     companion object {
         const val SIZE = 9

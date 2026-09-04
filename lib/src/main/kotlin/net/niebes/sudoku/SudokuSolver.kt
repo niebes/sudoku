@@ -11,9 +11,9 @@ import net.niebes.sudoku.model.UnsolvedCell
  */
 class SudokuSolver(
     val processors: List<FieldProcessor>,
-    private val deductions: DeductionListener = DeductionListener.IGNORE
+    private val deductions: DeductionListener = PrintingDeductionListener()
 ) {
-    constructor(deductions: DeductionListener = DeductionListener.IGNORE) : this(listOf(
+    constructor(deductions: DeductionListener = PrintingDeductionListener()) : this(listOf(
         FullHouseSolver(),
         HouseCandidateEliminator(),
         SingleCandidateMarker(),

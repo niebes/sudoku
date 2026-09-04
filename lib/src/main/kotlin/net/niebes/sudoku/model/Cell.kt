@@ -1,7 +1,11 @@
 package net.niebes.sudoku.model
 
+/** One square of the grid: either [SolvedCell] with a value, or [UnsolvedCell] with candidates. */
 sealed interface Cell {
     val position: CellPosition
+
+    /** True when this cell is unsolved and [value] is still one of its candidates. */
+    fun couldBe(value: Int): Boolean
 
     companion object {
         /** No candidates means "nothing known about this cell", so it starts with all of them. */
@@ -11,18 +15,4 @@ sealed interface Cell {
             else -> UnsolvedCell(position, candidates)
         }
     }
-}
-
-data class SolvedCell(
-    override val position: CellPosition,
-    val value: Int
-) : Cell {
-    override fun toString(): String = value.toString()
-}
-
-data class UnsolvedCell(
-    override val position: CellPosition,
-    val candidates: Candidates = Candidates.ALL
-) : Cell {
-    override fun toString(): String = candidates.toString()
 }

@@ -1,6 +1,4 @@
-package net.niebes.sudoku
-
-import net.niebes.sudoku.model.CellPosition
+package net.niebes.sudoku.model
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -9,11 +7,11 @@ internal class CellPositionTest {
     @Test
     fun mapsCellsToTheirThreeByThreeSegment() {
 
-        val cluster1 = CellPosition.SegmentPosition(0, 0)
-        val cluster2 = CellPosition.SegmentPosition(0, 1)
-        val cluster3 = CellPosition.SegmentPosition(0, 2)
-        val cluster4 = CellPosition.SegmentPosition(1, 0)
-        val cluster7 = CellPosition.SegmentPosition(2, 0)
+        val cluster1 = SegmentPosition(0, 0)
+        val cluster2 = SegmentPosition(0, 1)
+        val cluster3 = SegmentPosition(0, 2)
+        val cluster4 = SegmentPosition(1, 0)
+        val cluster7 = SegmentPosition(2, 0)
         assertThat(CellPosition(0, 0).segment).isEqualTo(cluster1)
         assertThat(CellPosition(0, 1).segment).isEqualTo(cluster1)
         assertThat(CellPosition(0, 2).segment).isEqualTo(cluster1)
