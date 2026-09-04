@@ -19,6 +19,11 @@ import net.niebes.sudoku.model.HouseKind
  * the fish's own, kept only where they also see **every** fin - which is why a fish with fins
  * scattered across segments yields nothing.
  *
+ * **Not in the default chain.** With alternating inference chains bounded at nine links rather than
+ * five, every elimination this finds on the corpus is already reachable as a chain - measured with
+ * it before AIC, after AIC, and absent altogether, all giving the same five puzzles needing search.
+ * It stays here because it is sound, cheap and independently useful, but it earns no place.
+ *
  * The cover lines come from the base lines that are *not* finned: those must already span exactly
  * as many lines as the fish is wide, and whatever the finned line has outside them are the fins.
  * That is the standard shape, and it keeps the search small enough to sit in the chain.

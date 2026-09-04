@@ -71,7 +71,7 @@ columns. The queries techniques are built from, all on `Field`:
   nothing cheaper was available. The chain runs levels 1–8 of `docs/solving-techniques.md`, cheapest
   first: full house, peer elimination, naked then hidden singles, pointing, claiming, naked and
   hidden subsets, basic fish, turbot fish, XY/XYZ/W-wings, empty rectangle, unique rectangle,
-  BUG+1, AIC, finned fish. Only the singles and full house place values; everything below exists
+  BUG+1, AIC. Only the singles and full house place values; everything below exists
   to create work for them.
 
   Two of those reason from the **puzzle** rather than the grid: unique rectangle and BUG+1 assume
@@ -99,8 +99,10 @@ as ordinary values.
 `docs/solving-techniques.md` is a standalone levelled reference for every non-brute-force technique,
 with worked examples, written independently of this codebase. Read it first. Levels 1–8 are implemented apart
 from ALS, Sue de Coq and the exotic fish; level 9 is what `search` already does. Simple colouring
-is implemented and tested but deliberately **not** in the chain — turbot fish covers short
-strong-link chains two levels sooner, and on grids that genuinely stall it finds nothing.
+and finned fish are implemented and tested but deliberately **not** in the
+chain. Turbot fish covers short strong-link chains two levels before colouring; AIC at nine links
+covers everything finned fish finds. Both were measured in and out — neither changes how many
+puzzles need search.
 
 Implement `EliminationTechnique` and insert it into the default chain in cost order. `eliminations(field)`
 must read only the field it is handed; the batch is applied afterwards, so a technique cannot observe

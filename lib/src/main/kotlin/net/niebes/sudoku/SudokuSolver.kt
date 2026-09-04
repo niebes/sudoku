@@ -12,7 +12,6 @@ import net.niebes.sudoku.technique.BugPlusOneEliminator
 import net.niebes.sudoku.technique.ClaimingEliminator
 import net.niebes.sudoku.technique.EmptyRectangleEliminator
 import net.niebes.sudoku.technique.FieldProcessor
-import net.niebes.sudoku.technique.FinnedFishEliminator
 import net.niebes.sudoku.technique.FullHouseSolver
 import net.niebes.sudoku.technique.HiddenSubsetEliminator
 import net.niebes.sudoku.technique.HouseCandidateEliminator
@@ -53,8 +52,7 @@ class SudokuSolver(
         EmptyRectangleEliminator(),
         UniqueRectangleEliminator(),
         BugPlusOneEliminator(),
-        AicEliminator(),
-        FinnedFishEliminator()
+        AicEliminator()
     ), deductions)
 
     fun solve(field: Field): SolveResult = search(field)

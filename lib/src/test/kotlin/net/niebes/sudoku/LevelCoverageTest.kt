@@ -111,8 +111,7 @@ internal class LevelCoverageTest {
             "EmptyRectangleEliminator",     // level 5
             "UniqueRectangleEliminator",    // level 6
             "BugPlusOneEliminator",         // level 6
-            "AicEliminator",                // level 7
-            "FinnedFishEliminator"          // level 8
+            "AicEliminator"                 // level 7
         )
     }
 }

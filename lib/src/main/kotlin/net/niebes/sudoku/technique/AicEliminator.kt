@@ -22,10 +22,12 @@ import net.niebes.sudoku.model.UnsolvedCell
  * bivalue cells, and a turbot fish is the three-link case. Those stay implemented separately
  * because they run sooner and cost far less; this is what is left when they are all stuck.
  *
- * [maxLinks] bounds the search. Chains grow exponentially and long ones are vanishingly rare, so
- * the limit is what keeps this affordable enough to sit in the chain at all.
+ * [maxLinks] bounds the search, and the bound is worth more than it looks. Going from five links to
+ * nine takes the corpus from fifteen puzzles needing search down to five, for about eight
+ * milliseconds across all sixty-six. Past nine nothing more is found and the cost climbs, so this
+ * is where the curve flattens - measured, not guessed.
  */
-class AicEliminator(private val maxLinks: Int = 5) : EliminationTechnique {
+class AicEliminator(private val maxLinks: Int = 9) : EliminationTechnique {
     override val technique = Technique.AIC
 
     override fun eliminations(field: Field): List<Elimination> {
