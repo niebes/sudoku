@@ -68,10 +68,16 @@ columns. The queries techniques are built from, all on `Field`:
   step applies the **first** technique that changes anything, then restarts from the top, so an
   expensive technique is reached only once every cheaper one is stuck. That is both why solving is
   fast and why the deduction trace is a difficulty rating — a technique appears in it only when
-  nothing cheaper was available. The chain runs levels 1–5 of `docs/solving-techniques.md`, cheapest
+  nothing cheaper was available. The chain runs levels 1–8 of `docs/solving-techniques.md`, cheapest
   first: full house, peer elimination, naked then hidden singles, pointing, claiming, naked and
-  hidden subsets, basic fish, turbot fish, XY/XYZ/W-wings, empty rectangle. Only the singles and
-  full house place values; everything below exists to create work for them.
+  hidden subsets, basic fish, turbot fish, XY/XYZ/W-wings, empty rectangle, unique rectangle,
+  BUG+1, AIC, finned fish. Only the singles and full house place values; everything below exists
+  to create work for them.
+
+  Two of those reason from the **puzzle** rather than the grid: unique rectangle and BUG+1 assume
+  the input has exactly one solution. That survives search — assigning a value can only reduce how
+  many solutions remain — but not an improper puzzle, and nothing checks properness. Drop them from
+  the chain if the solver must tolerate one.
 - `search` propagates, then branches on the unsolved cell with the fewest candidates (MRV). Because
   the model is immutable an assumption is just another field, so a wrong branch needs no rollback.
 
@@ -91,8 +97,10 @@ as ordinary values.
 ## Adding a technique
 
 `docs/solving-techniques.md` is a standalone levelled reference for every non-brute-force technique,
-with worked examples, written independently of this codebase. Read it first — levels 1–5 are
-implemented, 6 upward are not.
+with worked examples, written independently of this codebase. Read it first. Levels 1–8 are implemented apart
+from ALS, Sue de Coq and the exotic fish; level 9 is what `search` already does. Simple colouring
+is implemented and tested but deliberately **not** in the chain — turbot fish covers short
+strong-link chains two levels sooner, and on grids that genuinely stall it finds nothing.
 
 Implement `EliminationTechnique` and insert it into the default chain in cost order. `eliminations(field)`
 must read only the field it is handed; the batch is applied afterwards, so a technique cannot observe
