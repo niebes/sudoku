@@ -35,7 +35,7 @@ class SingleCandidateMarker : FieldProcessor {
     override fun process(field: Field, deductions: DeductionListener): Field {
         val cells = field.cells.toMutableList()
         // Positions are fixed for the life of a field, so the houses can be taken once up front.
-        field.houses().map { house -> house.map { it.position } }.forEach { mark(cells, it, deductions) }
+        field.houses().map { house -> house.cells.map { it.position } }.forEach { mark(cells, it, deductions) }
         return Field(cells)
     }
 

@@ -20,10 +20,18 @@ class Field(cells: Collection<Cell>) {
         SEGMENTS[segmentPosition.row * 3 + segmentPosition.column].cellsOf()
 
     /** The 27 constraint groups: nine rows, nine columns, nine segments. */
-    fun houses(): List<List<Cell>> = HOUSES.map { it.cellsOf() }
+    fun houses(): List<House> = HOUSE_INDEX.map { it.house() }
 
     /** The three houses containing [position]: its row, its column and its segment. */
-    fun housesOf(position: CellPosition): List<List<Cell>> = HOUSES_OF[position.index].map { it.cellsOf() }
+    fun housesOf(position: CellPosition): List<House> = HOUSES_OF[position.index].map { it.house() }
+
+    /**
+     * The 54 overlaps between a segment and a line - nine segments, each crossed by three rows and
+     * three columns.
+     */
+    fun intersections(): List<Intersection> = INTERSECTION_INDEX.map { (segment, line, shared) ->
+        Intersection(segment.house(), line.house(), shared.cellsOf())
+    }
 
     /** Values already placed in any house of [position], and so unavailable to it. */
     fun solvedPeers(position: CellPosition): Candidates {
@@ -53,9 +61,11 @@ class Field(cells: Collection<Cell>) {
             ?: duplicateValueAt()
 
     private fun duplicateValueAt(): CellPosition? {
-        for (house in HOUSES) {
+        // Deliberately walks raw indices rather than houses(): this runs on every propagation step,
+        // and materialising 27 houses of nine cells each time would dominate it.
+        for (house in HOUSE_INDEX) {
             var seen = Candidates.NONE
-            for (index in house) {
+            for (index in house.positions) {
                 val cell = cells[index]
                 if (cell is SolvedCell) {
                     if (seen.contains(cell.value)) return cell.position
@@ -67,6 +77,8 @@ class Field(cells: Collection<Cell>) {
     }
 
     private fun IntArray.cellsOf(): List<Cell> = map { cells[it] }
+
+    private fun HouseIndex.house(): House = House(kind, index, positions.cellsOf())
 
     override fun equals(other: Any?): Boolean = this === other || (other is Field && cells == other.cells)
     override fun hashCode(): Int = cells.hashCode()
@@ -82,12 +94,28 @@ class Field(cells: Collection<Cell>) {
             val firstColumn = segment % 3 * 3
             IntArray(SIZE) { (firstRow + it / 3) * SIZE + firstColumn + it % 3 }
         }
-        private val HOUSES: List<IntArray> = ROWS + COLUMNS + SEGMENTS
-        private val HOUSES_OF: List<List<IntArray>> =
-            (0 until CELL_COUNT).map { index -> HOUSES.filter { index in it } }
+        /** A house as positions only, so the shared layout is built once and reused by every field. */
+        private class HouseIndex(val kind: HouseKind, val index: Int, val positions: IntArray)
+
+        private val HOUSE_INDEX: List<HouseIndex> =
+            (0 until SIZE).map { HouseIndex(HouseKind.ROW, it, ROWS[it]) } +
+                (0 until SIZE).map { HouseIndex(HouseKind.COLUMN, it, COLUMNS[it]) } +
+                (0 until SIZE).map { HouseIndex(HouseKind.SEGMENT, it, SEGMENTS[it]) }
+
+        private val HOUSES_OF: List<List<HouseIndex>> =
+            (0 until CELL_COUNT).map { index -> HOUSE_INDEX.filter { index in it.positions } }
+
         private val PEERS: List<IntArray> = (0 until CELL_COUNT).map { index ->
-            HOUSES_OF[index].flatMap { it.asIterable() }.filter { it != index }.distinct().toIntArray()
+            HOUSES_OF[index].flatMap { it.positions.asIterable() }.filter { it != index }.distinct().toIntArray()
         }
+
+        private val INTERSECTION_INDEX: List<Triple<HouseIndex, HouseIndex, IntArray>> =
+            HOUSE_INDEX.filter { it.kind == HouseKind.SEGMENT }.flatMap { segment ->
+                HOUSE_INDEX.filter { it.kind != HouseKind.SEGMENT }
+                    .map { line -> Triple(segment, line, segment.positions.filter { it in line.positions }) }
+                    .filter { (_, _, shared) -> shared.isNotEmpty() }
+                    .map { (seg, line, shared) -> Triple(seg, line, shared.toIntArray()) }
+            }
 
         private fun rowMajor(cells: Collection<Cell>): List<Cell> {
             require(cells.size == CELL_COUNT) { "a field holds $CELL_COUNT cells, got ${cells.size}" }
