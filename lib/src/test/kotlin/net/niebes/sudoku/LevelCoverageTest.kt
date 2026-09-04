@@ -84,7 +84,8 @@ internal class LevelCoverageTest {
             "HiddenSubsetEliminator",       // level 3
             "BasicFishEliminator",          // level 4
             "TurbotFishEliminator",         // level 5
-            "XyWingEliminator"              // level 5
+            "XyWingEliminator",             // level 5
+            "XyzWingEliminator"             // level 5
         )
     }
 }

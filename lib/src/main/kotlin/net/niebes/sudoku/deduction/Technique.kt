@@ -40,6 +40,9 @@ enum class Technique {
     /** A two-candidate pivot forced one of two pincers to take the value they share. */
     XY_WING,
 
+    /** Like XY_WING, but the pivot could take the shared value too, so it eliminates less. */
+    XYZ_WING,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }
