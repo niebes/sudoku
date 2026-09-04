@@ -37,8 +37,13 @@ internal class EmptyRectangleEliminatorTest {
     fun clearsWhereTheStrongLinkAndTheRectangleColumnMeet() {
         val eliminated = EmptyRectangleEliminator().eliminations(emptyRectangleOn4())
 
+        // The segment's places for the value, then the strong link that pins them down.
         assertThat(eliminated).containsExactly(
-            Elimination(Technique.EMPTY_RECTANGLE, CellPosition(1, 4), Candidates.of(4))
+            Elimination(Technique.EMPTY_RECTANGLE, CellPosition(1, 4), Candidates.of(4),
+                because = listOf(
+                    CellPosition(3, 4), CellPosition(4, 3), CellPosition(4, 5),
+                    CellPosition(4, 7), CellPosition(1, 7)
+                ))
         )
     }
 

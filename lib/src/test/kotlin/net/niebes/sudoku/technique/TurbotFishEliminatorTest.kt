@@ -39,6 +39,13 @@ internal class TurbotFishEliminatorTest {
             CellPosition(0, 8), CellPosition(2, 8),   // segment with (1,7), column with (4,8)
             CellPosition(3, 7), CellPosition(5, 7)    // segment with (4,8), column with (1,7)
         )
+        // The evidence walks the chain end to end: far end, the two joined ends, the other far end.
+        assertThat(TurbotFishEliminator().eliminations(skyscraperOn9()).filter { it.values == Candidates.of(9) })
+            .allMatch {
+                it.because == listOf(
+                    CellPosition(1, 7), CellPosition(1, 1), CellPosition(4, 1), CellPosition(4, 8)
+                )
+            }
     }
 
     @Test

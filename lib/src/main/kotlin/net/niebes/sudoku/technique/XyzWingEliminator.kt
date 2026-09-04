@@ -35,9 +35,10 @@ class XyzWingEliminator : EliminationTechnique {
                     if (shared.size != 1) return@pair
                     val z = shared.single()
 
+                    val wing = listOf(pivot.position, a.position, b.position)
                     field.seenByBoth(a.position, b.position)
                         .filter { it.couldBe(z) && field.sees(it.position, pivot.position) }
-                        .forEach { add(Elimination(technique, it.position, Candidates.of(z))) }
+                        .forEach { add(Elimination(technique, it.position, Candidates.of(z), wing)) }
                 }
             }
         }

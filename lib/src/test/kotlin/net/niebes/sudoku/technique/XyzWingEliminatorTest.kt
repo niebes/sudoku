@@ -31,9 +31,11 @@ internal class XyzWingEliminatorTest {
     fun clearsTheSharedValueFromWhatSeesAllThreeCells() {
         val eliminated = XyzWingEliminator().eliminations(xyzWingOn7())
 
+        // Pivot first, then the pincers: the order the argument reads in.
+        val wing = listOf(CellPosition(1, 1), CellPosition(1, 2), CellPosition(5, 1))
         assertThat(eliminated).containsExactlyInAnyOrder(
-            Elimination(Technique.XYZ_WING, CellPosition(0, 1), Candidates.of(7)),
-            Elimination(Technique.XYZ_WING, CellPosition(2, 1), Candidates.of(7))
+            Elimination(Technique.XYZ_WING, CellPosition(0, 1), Candidates.of(7), wing),
+            Elimination(Technique.XYZ_WING, CellPosition(2, 1), Candidates.of(7), wing)
         )
     }
 

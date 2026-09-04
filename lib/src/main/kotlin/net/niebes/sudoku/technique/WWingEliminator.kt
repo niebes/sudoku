@@ -32,11 +32,17 @@ class WWingEliminator : EliminationTechnique {
 
                 a.candidates.values.forEach { linked ->
                     val forced = (a.candidates - linked).single()
-                    if (field.conjugatePairs(linked).any { it.joins(field, a, b) }) {
-                        field.seenByBoth(a.position, b.position)
-                            .filter { it.couldBe(forced) }
-                            .forEach { add(Elimination(technique, it.position, Candidates.of(forced))) }
-                    }
+                    val link = field.conjugatePairs(linked).firstOrNull { it.joins(field, a, b) } ?: return@forEach
+                    // End to end: pair cell, the link end that reaches it, the other end, the other
+                    // pair cell - the order the forcing argument walks.
+                    val (nearA, nearB) =
+                        if (field.sees(link.first.position, a.position) && field.sees(link.second.position, b.position))
+                            link.first to link.second
+                        else link.second to link.first
+                    val wing = listOf(a.position, nearA.position, nearB.position, b.position)
+                    field.seenByBoth(a.position, b.position)
+                        .filter { it.couldBe(forced) }
+                        .forEach { add(Elimination(technique, it.position, Candidates.of(forced), wing)) }
                 }
             }
         }

@@ -36,15 +36,18 @@ class EmptyRectangleEliminator : EliminationTechnique {
             if (links.isEmpty()) return@forEach
 
             segments.forEach { segment ->
-                rectanglesIn(segment, value).forEach { corner ->
-                    links.forEach { link -> addAll(clear(field, value, corner, link)) }
+                rectanglesIn(segment, value).forEach { (corner, places) ->
+                    links.forEach { link -> addAll(clear(field, value, corner, places, link)) }
                 }
             }
         }
     }
 
-    /** Every (row, column) of [segment] whose cross covers all of the segment's places for [value]. */
-    private fun rectanglesIn(segment: House, value: Int): List<CellPosition> {
+    /**
+     * Every (row, column) of [segment] whose cross covers all of the segment's places for [value],
+     * paired with those places - they are the evidence an elimination cites.
+     */
+    private fun rectanglesIn(segment: House, value: Int): List<Pair<CellPosition, List<CellPosition>>> {
         if (segment.holds(value)) return emptyList()
         val places = segment.candidatesFor(value).map { it.position }
         if (places.size < 2) return emptyList()
@@ -59,12 +62,14 @@ class EmptyRectangleEliminator : EliminationTechnique {
                     // more than this does and has already said it.
                     places.any { it.row != corner.row } && places.any { it.column != corner.column }
             }
+            .map { it to places }
     }
 
     private fun clear(
         field: Field,
         value: Int,
         corner: CellPosition,
+        places: List<CellPosition>,
         link: ConjugatePair
     ): List<Elimination> = link.ends.mapNotNull { end ->
         val far = link.other(end)
@@ -85,6 +90,7 @@ class EmptyRectangleEliminator : EliminationTechnique {
 
         if (onSegment(target)) return@mapNotNull null
         if (!field.cellAt(target).couldBe(value)) return@mapNotNull null
-        Elimination(technique, target, Candidates.of(value))
+        // The rectangle's places, then the link from the end that enters it to the end it forces.
+        Elimination(technique, target, Candidates.of(value), places + listOf(end.position, far.position))
     }
 }

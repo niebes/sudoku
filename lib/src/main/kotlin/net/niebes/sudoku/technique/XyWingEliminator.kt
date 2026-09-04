@@ -34,9 +34,10 @@ class XyWingEliminator : EliminationTechnique {
                 val z = (pincer.candidates - x).single()
 
                 reachable.filter { it.candidates == Candidates.of(y, z) }.forEach { opposite ->
+                    val wing = listOf(pivot.position, pincer.position, opposite.position)
                     field.seenByBoth(pincer.position, opposite.position)
                         .filter { it.couldBe(z) }
-                        .forEach { add(Elimination(technique, it.position, Candidates.of(z))) }
+                        .forEach { add(Elimination(technique, it.position, Candidates.of(z), wing)) }
                 }
             }
         }
