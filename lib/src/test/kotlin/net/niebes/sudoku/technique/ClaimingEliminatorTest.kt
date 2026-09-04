@@ -1,7 +1,11 @@
-package net.niebes.sudoku
+package net.niebes.sudoku.technique
 
+import net.niebes.sudoku.Puzzles
+import net.niebes.sudoku.SudokuSolver
+import net.niebes.sudoku.candidatesAt
 import net.niebes.sudoku.deduction.RecordingDeductionListener
 import net.niebes.sudoku.deduction.Technique
+import net.niebes.sudoku.field
 import net.niebes.sudoku.model.Candidates
 import net.niebes.sudoku.model.CellPosition
 import net.niebes.sudoku.model.Field

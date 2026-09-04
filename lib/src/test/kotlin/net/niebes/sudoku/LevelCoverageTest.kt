@@ -2,6 +2,14 @@ package net.niebes.sudoku
 
 import net.niebes.sudoku.deduction.RecordingDeductionListener
 import net.niebes.sudoku.deduction.Technique
+import net.niebes.sudoku.technique.ClaimingEliminator
+import net.niebes.sudoku.technique.FullHouseSolver
+import net.niebes.sudoku.technique.HiddenSubsetEliminator
+import net.niebes.sudoku.technique.HouseCandidateEliminator
+import net.niebes.sudoku.technique.NakedSubsetEliminator
+import net.niebes.sudoku.technique.PointingEliminator
+import net.niebes.sudoku.technique.SingleCandidateMarker
+import net.niebes.sudoku.technique.SolveSingleCandidateTransformer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
