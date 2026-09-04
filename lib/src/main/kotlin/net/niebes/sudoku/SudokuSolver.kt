@@ -4,13 +4,14 @@ import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.UnsolvedCell
 
 class SudokuSolver(
-    private val processor: List<FieldProcessor>
+    private val processor: List<FieldProcessor>,
+    private val deductions: DeductionListener = DeductionListener.IGNORE
 ) {
-    constructor() : this(listOf(
+    constructor(deductions: DeductionListener = DeductionListener.IGNORE) : this(listOf(
         HouseCandidateEliminator(),
         SingleCandidateMarker(),
         SolveSingleCandidateTransformer()
-    ))
+    ), deductions)
 
     fun solve(field: Field): SolveResult = search(field)
 
@@ -24,6 +25,7 @@ class SudokuSolver(
 
         val pivot = propagated.field.pivot() ?: return SolveResult.Solved(propagated.field)
         pivot.candidates.values.forEach { candidate ->
+            deductions.onDeduction(Deduction(Technique.GUESS, pivot.position, candidate))
             val attempt = search(propagated.field.assign(pivot.position, candidate))
             if (attempt is SolveResult.Solved) return attempt
         }
@@ -51,5 +53,5 @@ class SudokuSolver(
         .minWithOrNull(compareBy({ it.candidates.size }, { it.position.row }, { it.position.column }))
 
     private fun iterate(field: Field) =
-        processor.fold(field) { acc, fieldProcessor -> fieldProcessor.process(acc) }
+        processor.fold(field) { acc, fieldProcessor -> fieldProcessor.process(acc, deductions) }
 }

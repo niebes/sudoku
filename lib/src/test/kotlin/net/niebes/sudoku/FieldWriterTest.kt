@@ -177,6 +177,43 @@ internal class FieldWriterTest {
          */
     }
 
+    @Test
+    fun recordsDeductionsInsteadOfPrinting() {
+        val singlesOnly = CsvFieldParser().parse("""
+            ,6,,,,4,,,
+            ,,,3,,,1,4,
+            4,,,,5,1,,8,9
+            ,,,5,,3,9,6,1
+            ,,,,,,,,
+            1,9,2,6,,8,,,
+            2,8,,4,9,,,,3
+            ,3,9,,,5,,,
+            ,,,2,,,,9,
+        """.trimIndent())
+        val needsSearch = PipeFieldParser().parse("""
+            3|2|||||||
+            |||5|||8||
+            4||||||||
+            |6|||1|4|||
+            ||5||||3||
+            |||||||2|
+            |||7|9||||8
+            |||||||4|6
+            |8||3|||||
+         """.trimIndent())
+
+        val easy = RecordingDeductionListener()
+        assertThat(SudokuSolver(easy).solve(singlesOnly)).isInstanceOf(SolveResult.Solved::class.java)
+        val hard = RecordingDeductionListener()
+        assertThat(SudokuSolver(hard).solve(needsSearch)).isInstanceOf(SolveResult.Solved::class.java)
+
+        assertThat(easy.deductions).isNotEmpty()
+        assertThat(easy.deductions.map { it.technique }).doesNotContain(Technique.GUESS)
+        assertThat(easy.guesses).isZero()
+        // The techniques in the chain do not reach this one, so search has to assume its way in.
+        assertThat(hard.guesses).isPositive()
+    }
+
     private fun solutionEquals(input: Field, expectedSolution: Field) {
         SolutionWriter().writeField(input)
         val result = SudokuSolver().solve(input)
