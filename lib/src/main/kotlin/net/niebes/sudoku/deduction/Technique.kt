@@ -31,6 +31,9 @@ enum class Technique {
     /** k values of a house fitted in k cells, so everything else leaves those cells. */
     HIDDEN_SUBSET,
 
+    /** The value was confined to n lines that between them use only n crossing lines. */
+    BASIC_FISH,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }

@@ -70,7 +70,8 @@ internal class LevelCoverageTest {
                 Technique.POINTING,
                 Technique.CLAIMING,
                 Technique.NAKED_SUBSET,
-                Technique.HIDDEN_SUBSET
+                Technique.HIDDEN_SUBSET,
+                Technique.BASIC_FISH
             )
         )
     }
@@ -88,7 +89,8 @@ internal class LevelCoverageTest {
             "PointingEliminator",           // level 2
             "ClaimingEliminator",           // level 2
             "NakedSubsetEliminator",        // level 3
-            "HiddenSubsetEliminator"        // level 3
+            "HiddenSubsetEliminator",       // level 3
+            "BasicFishEliminator"           // level 4
         )
     }
 }
