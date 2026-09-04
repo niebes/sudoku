@@ -3,8 +3,14 @@ package net.niebes.sudoku
 import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.UnsolvedCell
 
+/**
+ * Applies its techniques in order, cheapest level first, until the field stops changing.
+ *
+ * The default chain runs levels one to three: singles, then locked candidates, then subsets. Every
+ * technique below the singles is there to create work for them - only singles place values.
+ */
 class SudokuSolver(
-    private val processor: List<FieldProcessor>,
+    val processors: List<FieldProcessor>,
     private val deductions: DeductionListener = DeductionListener.IGNORE
 ) {
     constructor(deductions: DeductionListener = DeductionListener.IGNORE) : this(listOf(
@@ -58,5 +64,5 @@ class SudokuSolver(
         .minWithOrNull(compareBy({ it.candidates.size }, { it.position.row }, { it.position.column }))
 
     private fun iterate(field: Field) =
-        processor.fold(field) { acc, fieldProcessor -> fieldProcessor.process(acc, deductions) }
+        processors.fold(field) { acc, fieldProcessor -> fieldProcessor.process(acc, deductions) }
 }
