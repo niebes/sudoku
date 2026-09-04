@@ -41,7 +41,7 @@ data class Field(
      * incomplete, so it can place a duplicate rather than exhaust a cell, and search must catch either.
      */
     fun contradictionAt(): CellPosition? =
-        unsolved().firstOrNull { it.candidates.values.isEmpty() }?.position ?: duplicateValueAt()
+        unsolved().firstOrNull { it.candidates.isEmpty() }?.position ?: duplicateValueAt()
 
     private fun duplicateValueAt(): CellPosition? {
         houses().forEach { house ->

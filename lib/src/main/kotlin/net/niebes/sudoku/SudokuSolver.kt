@@ -23,7 +23,7 @@ class SudokuSolver(
         if (propagated !is SolveResult.Stalled) return propagated
 
         val pivot = propagated.field.pivot() ?: return SolveResult.Solved(propagated.field)
-        pivot.candidates.values.sorted().forEach { candidate ->
+        pivot.candidates.values.forEach { candidate ->
             val attempt = search(propagated.field.assign(pivot.position, candidate))
             if (attempt is SolveResult.Solved) return attempt
         }
@@ -48,7 +48,7 @@ class SudokuSolver(
      * Ties break on position so a given puzzle always explores the same tree.
      */
     private fun Field.pivot(): UnsolvedCell? = unsolved()
-        .minWithOrNull(compareBy({ it.candidates.values.size }, { it.position.row }, { it.position.column }))
+        .minWithOrNull(compareBy({ it.candidates.size }, { it.position.row }, { it.position.column }))
 
     private fun iterate(field: Field) =
         processor.fold(field) { acc, fieldProcessor -> fieldProcessor.process(acc) }

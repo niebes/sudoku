@@ -52,12 +52,12 @@ class SingleCandidateMarker : FieldProcessor {
             if (current.any { it is SolvedCell && it.value == candidate }) return@candidate
 
             val only = current.filterIsInstance<UnsolvedCell>()
-                .filter { candidate in it.candidates.values }
+                .filter { it.candidates.contains(candidate) }
                 .singleOrNull() ?: return@candidate
-            if (only.candidates.values.size == 1) return@candidate
+            if (only.candidates.size == 1) return@candidate
 
             println("mark only occurrence of $candidate in ${only.position}")
-            cells[only.position] = UnsolvedCell(only.position, Candidates(setOf(candidate)))
+            cells[only.position] = UnsolvedCell(only.position, Candidates.of(candidate))
         }
     }
 }
@@ -67,12 +67,12 @@ class SolveSingleCandidateTransformer : FieldProcessor {
     override fun process(field: Field): Field = field.cells.map { cell ->
         when (cell) {
             is SolvedCell -> cell
-            is UnsolvedCell -> when (cell.candidates.values.size) {
+            is UnsolvedCell -> when (cell.candidates.size) {
                 // A cell with no candidates is left as-is; the solver reports it as a contradiction.
                 0 -> cell
                 1 -> {
-                    println("solved ${cell.position} to ${cell.candidates.values.first()}")
-                    SolvedCell(cell.position, cell.candidates.values.first())
+                    println("solved ${cell.position} to ${cell.candidates.single()}")
+                    SolvedCell(cell.position, cell.candidates.single())
                 }
                 else -> cell
             }

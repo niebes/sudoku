@@ -8,7 +8,7 @@ sealed class Cell(
         fun new(position: CellPosition, candidates: Set<Int>) = when (candidates.size){
             0 ->  UnsolvedCell(position)
             1 ->  SolvedCell(position, candidates.first())
-            else -> UnsolvedCell(position, Candidates(candidates))
+            else -> UnsolvedCell(position, Candidates.of(candidates))
         }
 
         fun new(position: CellPosition, value: Int?) =
@@ -42,14 +42,10 @@ class SolvedCell(
 
 class UnsolvedCell(
         position: CellPosition,
-        val candidates: Candidates = Candidates()
+        val candidates: Candidates = Candidates.ALL
 ) : Cell(position) {
-    override fun toString(): String = candidates.values.toString()
-    fun removeCandidate(value: Int): UnsolvedCell {
-        val candidateValues = candidates.values.toMutableSet()
-        candidateValues.remove(value)
-        return UnsolvedCell(position, Candidates(candidateValues))
-    }
+    override fun toString(): String = candidates.toString()
+    fun removeCandidate(value: Int): UnsolvedCell = UnsolvedCell(position, candidates - value)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

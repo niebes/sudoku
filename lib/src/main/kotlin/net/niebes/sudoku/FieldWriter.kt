@@ -21,6 +21,6 @@ class SolutionWriter : FieldWriter {
 
     fun Cell.getValue(): String = when (this) {
         is SolvedCell -> value.toString()
-        is UnsolvedCell -> candidates.values.joinToString(",","{","}")
+        is UnsolvedCell -> candidates.toString()
     }
 }
