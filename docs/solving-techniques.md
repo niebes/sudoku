@@ -420,11 +420,15 @@ answer is the candidate appearing **three times** in one of that cell's houses:
  -> r5c5 = 6
 ```
 
-> **These techniques are only valid on a grid known to have exactly one solution.**
-> That is true of a puzzle as handed to you, and false of a grid reached by assuming
-> a value — where a wrong assumption may have produced many completions or none. Any
-> solver that ever branches must switch this level off inside a branch. Given that
-> levels 2–5 cover more ground with no such caveat, this level is optional.
+> **These techniques are only valid on a grid known to have exactly one solution.** That is
+> a claim about the puzzle, not about the grid in front of you, and this is the only place
+> in the list where the difference matters.
+>
+> It does survive branching. Assigning a value can only reduce how many solutions remain,
+> never raise it, so every grid reached from a proper puzzle still has at most one — and in
+> a branch with none, an elimination cannot remove a value from a solution that does not
+> exist. What it does not survive is an improper puzzle: hand a solver a grid with two
+> solutions and these techniques may eliminate a value one of them needed.
 
 ---
 
