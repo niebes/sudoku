@@ -46,6 +46,42 @@ interface EliminationTechnique : FieldProcessor {
 }
 
 /**
+ * Full house: a house with one unsolved cell left takes the value missing from it.
+ *
+ * Strictly a special case of a naked single, but it needs no candidates at all - only the eight
+ * values already there - so it is the cheapest deduction available and the one a person makes first.
+ */
+class FullHouseSolver : FieldProcessor {
+    override fun process(field: Field, deductions: DeductionListener): Field {
+        // A cell can be the last gap in two houses at once, so placements are keyed by position.
+        val placements = LinkedHashMap<CellPosition, Int>()
+
+        field.houses().forEach { house ->
+            val gap = house.unsolved().singleOrNull() ?: return@forEach
+
+            var placed = Candidates.NONE
+            house.cells.forEach { if (it is SolvedCell) placed += it.value }
+
+            val missing = Candidates.ALL - placed
+            // More than one value missing means the house repeats a value; the cell not being able
+            // to take the missing one means the same thing. Either way this is not ours to report -
+            // leaving the cell alone lets the contradiction surface as an exhausted cell.
+            if (missing.size != 1 || !gap.candidates.contains(missing.single())) return@forEach
+
+            placements.putIfAbsent(gap.position, missing.single())
+        }
+        if (placements.isEmpty()) return field
+
+        val cells = field.cells.toMutableList()
+        placements.forEach { (position, value) ->
+            deductions.onDeduction(Placement(Technique.FULL_HOUSE, position, value))
+            cells[position.index] = SolvedCell(position, value)
+        }
+        return Field(cells)
+    }
+}
+
+/**
  * A value already placed in a cell's row, column or segment cannot be a candidate for that cell.
  * Row, column and segment are the same constraint - a house - so this is one technique, not three.
  */

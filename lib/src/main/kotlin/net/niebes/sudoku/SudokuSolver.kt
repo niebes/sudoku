@@ -8,6 +8,7 @@ class SudokuSolver(
     private val deductions: DeductionListener = DeductionListener.IGNORE
 ) {
     constructor(deductions: DeductionListener = DeductionListener.IGNORE) : this(listOf(
+        FullHouseSolver(),
         HouseCandidateEliminator(),
         SingleCandidateMarker(),
         SolveSingleCandidateTransformer()
