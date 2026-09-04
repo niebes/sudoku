@@ -21,7 +21,48 @@ interface UnsolvedCellFieldProcessor : FieldProcessor {
     }.let { Field(it.toSet()) }
 }
 
+/**
+ * A value already placed in a cell's row, column or segment cannot be a candidate for that cell.
+ * Row, column and segment are the same constraint - a house - so this is one technique, not three.
+ */
+class HouseCandidateEliminator : UnsolvedCellFieldProcessor {
+    override fun processUnsolved(field: Field, cell: UnsolvedCell): UnsolvedCell =
+        field.housesOf(cell.position)
+            .flatMap { house -> house.filterIsInstance<SolvedCell>() }
+            .fold(cell) { candidate, solved -> candidate.removeCandidate(solved.value) }
+}
 
+/** Hidden singles: a candidate that fits in only one cell of a house belongs to that cell. */
+class SingleCandidateMarker : FieldProcessor {
+    override fun process(field: Field): Field {
+        val cells = field.cells.associateByTo(LinkedHashMap()) { it.position }
+        // Positions are fixed for the life of a field, so the houses can be taken once up front.
+        field.houses().map { house -> house.map { it.position } }.forEach { mark(cells, it) }
+        return Field(cells.values.toSet())
+    }
+
+    /**
+     * Cell state is re-read from [cells] on every lookup: narrowing one cell changes which candidates
+     * are still hidden singles, so deciding against a stale snapshot lets two candidates claim the
+     * same cell.
+     */
+    private fun mark(cells: MutableMap<CellPosition, Cell>, house: List<CellPosition>) {
+        (1..9).forEach candidate@{ candidate ->
+            val current = house.map { cells.getValue(it) }
+            if (current.any { it is SolvedCell && it.value == candidate }) return@candidate
+
+            val only = current.filterIsInstance<UnsolvedCell>()
+                .filter { candidate in it.candidates.values }
+                .singleOrNull() ?: return@candidate
+            if (only.candidates.values.size == 1) return@candidate
+
+            println("mark only occurrence of $candidate in ${only.position}")
+            cells[only.position] = UnsolvedCell(only.position, Candidates(setOf(candidate)))
+        }
+    }
+}
+
+/** Naked singles: a cell with one candidate left is solved. */
 class SolveSingleCandidateTransformer : FieldProcessor {
     override fun process(field: Field): Field = field.cells.map { cell ->
         when (cell) {
@@ -38,79 +79,3 @@ class SolveSingleCandidateTransformer : FieldProcessor {
         }
     }.let { Field(it.toSet()) }
 }
-
-class RowCandidateEliminator : UnsolvedCellFieldProcessor {
-    override fun processUnsolved(field: Field, cell: UnsolvedCell): UnsolvedCell {
-        var processed = cell
-        field.getRow(cell.position.row)
-            .filterIsInstance(SolvedCell::class.java)
-            .map {
-                processed = processed.removeCandidate(it.value)
-            }
-        return processed
-    }
-}
-
-class ColumnCandidateEliminator : UnsolvedCellFieldProcessor {
-    override fun processUnsolved(field: Field, cell: UnsolvedCell): UnsolvedCell {
-        var processed = cell
-
-        field.getColumn(cell.position.column)
-            .filterIsInstance(SolvedCell::class.java)
-            .map {
-                processed = processed.removeCandidate(it.value)
-            }
-        return processed
-    }
-}
-
-class SegmentCandidateEliminator : UnsolvedCellFieldProcessor {
-    override fun processUnsolved(field: Field, cell: UnsolvedCell): UnsolvedCell {
-        var processed = cell
-        field.getSegment(cell.position.segment)
-            .filterIsInstance(SolvedCell::class.java)
-            .map {
-                processed = processed.removeCandidate(it.value)
-            }
-        return processed
-    }
-}
-
-class SingleCandidateMarker : FieldProcessor {
-    override fun process(field: Field): Field {
-        val cells = field.cells.associateByTo(LinkedHashMap()) { it.position }
-
-        markHiddenSingles(cells) { it.position.row }
-        markHiddenSingles(cells) { it.position.column }
-        markHiddenSingles(cells) { it.position.segment }
-        return Field(cells.values.toSet())
-    }
-
-    /**
-     * A candidate that can go in only one cell of a house belongs there. Cell state is re-read from
-     * [cells] on every lookup: narrowing one cell changes which candidates are still hidden singles,
-     * so deciding against a stale snapshot lets two candidates claim the same cell.
-     */
-    private fun markHiddenSingles(cells: MutableMap<CellPosition, Cell>, house: (Cell) -> Any) {
-        cells.values.groupBy(house).values.forEach { members ->
-            val positions = members.map { it.position }
-            (1..9).forEach candidate@{ candidate ->
-                val current = positions.map { cells.getValue(it) }
-                if (current.any { it is SolvedCell && it.value == candidate }) return@candidate
-
-                val holders = current.filterIsInstance<UnsolvedCell>()
-                    .filter { candidate in it.candidates.values }
-                val only = holders.singleOrNull() ?: return@candidate
-                if (only.candidates.values.size == 1) return@candidate
-
-                println("mark only occurrence of $candidate in ${only.position}")
-                cells[only.position] = UnsolvedCell(only.position, Candidates(setOf(candidate)))
-            }
-        }
-    }
-}
-
-
-// remove solutions from candidates of row, column, segment
-// remove candidates when only number in segment
-// solve single candidate cell, fail single candidate

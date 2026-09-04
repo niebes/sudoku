@@ -31,6 +31,10 @@ data class Field(
             (0..8).map { getColumn(it) } +
             (0..2).flatMap { r -> (0..2).map { c -> getSegment(CellPosition.SegmentPosition(r, c)) } }
 
+    /** The three houses containing [position]: its row, its column and its segment. */
+    fun housesOf(position: CellPosition): List<Set<Cell>> =
+        listOf(getRow(position.row), getColumn(position.column), getSegment(position.segment))
+
     /**
      * Position proving the field cannot be completed, or null if it is still consistent. Both a cell
      * with no candidates left and two cells holding the same value in one house count: propagation is

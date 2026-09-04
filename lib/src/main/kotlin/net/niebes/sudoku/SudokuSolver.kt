@@ -7,9 +7,7 @@ class SudokuSolver(
     private val processor: List<FieldProcessor>
 ) {
     constructor() : this(listOf(
-        RowCandidateEliminator(),
-        ColumnCandidateEliminator(),
-        SegmentCandidateEliminator(),
+        HouseCandidateEliminator(),
         SingleCandidateMarker(),
         SolveSingleCandidateTransformer()
     ))
