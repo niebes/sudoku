@@ -58,6 +58,9 @@ enum class Technique {
     /** A fish spoiled by extra candidates in one base line, whose eliminations survive where they see every fin. */
     FINNED_FISH,
 
+    /** Four corners holding one pair would give the puzzle two solutions, so the odd corner cannot join them. */
+    UNIQUE_RECTANGLE,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }

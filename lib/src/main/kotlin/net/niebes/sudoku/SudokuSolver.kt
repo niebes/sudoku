@@ -20,6 +20,7 @@ import net.niebes.sudoku.technique.PointingEliminator
 import net.niebes.sudoku.technique.SingleCandidateMarker
 import net.niebes.sudoku.technique.SolveSingleCandidateTransformer
 import net.niebes.sudoku.technique.TurbotFishEliminator
+import net.niebes.sudoku.technique.UniqueRectangleEliminator
 import net.niebes.sudoku.technique.WWingEliminator
 import net.niebes.sudoku.technique.XyWingEliminator
 import net.niebes.sudoku.technique.XyzWingEliminator
@@ -49,6 +50,7 @@ class SudokuSolver(
         XyzWingEliminator(),
         WWingEliminator(),
         EmptyRectangleEliminator(),
+        UniqueRectangleEliminator(),
         AicEliminator(),
         FinnedFishEliminator()
     ), deductions)
