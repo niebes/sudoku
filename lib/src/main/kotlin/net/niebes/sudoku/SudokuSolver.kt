@@ -35,8 +35,8 @@ class SudokuSolver(
     constructor(deductions: DeductionListener = DeductionListener.IGNORE) : this(listOf(
         FullHouseSolver(),
         HouseCandidateEliminator(),
-        SingleCandidateMarker(),
         SolveSingleCandidateTransformer(),
+        SingleCandidateMarker(),
         PointingEliminator(),
         ClaimingEliminator(),
         NakedSubsetEliminator(),
@@ -88,6 +88,21 @@ class SudokuSolver(
     private fun Field.pivot(): UnsolvedCell? = unsolved()
         .minWithOrNull(compareBy({ it.candidates.size }, { it.position.row }, { it.position.column }))
 
-    private fun iterate(field: Field) =
-        processors.fold(field) { acc, fieldProcessor -> fieldProcessor.process(acc, deductions) }
+    /**
+     * One step of solving: the result of the *first* technique that changes anything, not the result
+     * of running them all. [propagate] then starts again from the top, so an expensive technique is
+     * only reached once every cheaper one has nothing left to say.
+     *
+     * That is what makes the deduction trace mean something. Folding the whole chain credited a
+     * jellyfish for work a naked single was about to do anyway, because both ran on the same pass;
+     * now a technique appears in the trace only when nothing cheaper was available, which is the
+     * definition of how hard a puzzle is.
+     */
+    private fun iterate(field: Field): Field {
+        processors.forEach { processor ->
+            val next = processor.process(field, deductions)
+            if (next != field) return next
+        }
+        return field
+    }
 }

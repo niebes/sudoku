@@ -41,7 +41,10 @@ A Sudoku solver: constraint propagation with backtracking search on top. There i
 
 **Solver** (`SudokuSolver`). Two layers:
 
-- `propagate` folds the field through an ordered `List<FieldProcessor>` until it solves the field, contradicts itself, or stops changing. The default chain runs levels 1-5 of `docs/solving-techniques.md`, cheapest first: full house, peer elimination, hidden and naked singles, pointing, claiming, naked and hidden subsets, basic fish, turbot fish, XY/XYZ/W-wings, empty rectangle. Only the singles and full house place values; everything else exists to create work for them.
+- `propagate` folds the field through an ordered `List<FieldProcessor>` until it solves the field, contradicts itself, or stops changing. Each step applies the **first** technique that changes
+anything, not all of them - `propagate` then restarts from the top, so an expensive technique is
+reached only once every cheaper one is stuck. That is what makes the deduction trace a difficulty
+rating: a technique appears in it only when nothing cheaper was available. The default chain runs levels 1-5 of `docs/solving-techniques.md`, cheapest first: full house, peer elimination, hidden and naked singles, pointing, claiming, naked and hidden subsets, basic fish, turbot fish, XY/XYZ/W-wings, empty rectangle. Only the singles and full house place values; everything else exists to create work for them.
 - `search` propagates, then branches on the unsolved cell with the fewest candidates (MRV), recursing. Because the model is immutable an assumption is just another field, so a wrong branch needs no rollback.
 
 Adding a technique means implementing `EliminationTechnique` and inserting it into the default chain. `eliminations(field)` must read only the field it is handed - the batch is applied afterwards, so a technique cannot observe its own partial results. Implement `FieldProcessor` directly only for a technique that *places* values, as `FullHouseSolver` does.

@@ -19,7 +19,7 @@ internal class TechniqueSoundnessTest {
 
     @Test
     fun propagationNeverEliminatesAValueFromTheSolution() {
-        (Puzzles.all + GeneratedPuzzles.all).forEach { puzzle ->
+        (Puzzles.all + GeneratedPuzzles.all + HardPuzzles.all).forEach { puzzle ->
             val propagated = SudokuSolver().propagate(puzzle.field()).field
 
             propagated.cells.forEachIndexed { index, cell ->
@@ -44,7 +44,7 @@ internal class TechniqueSoundnessTest {
         // common case, and this says which one rather than just that propagation broke.
         val techniques = SudokuSolver().processors.filterIsInstance<EliminationTechnique>()
 
-        (Puzzles.all + GeneratedPuzzles.all).forEach { puzzle ->
+        (Puzzles.all + GeneratedPuzzles.all + HardPuzzles.all).forEach { puzzle ->
             val settled = SudokuSolver(listOf(HouseCandidateEliminator())).propagate(puzzle.field()).field
 
             techniques.forEach { technique ->
@@ -60,7 +60,7 @@ internal class TechniqueSoundnessTest {
 
     @Test
     fun searchSolvesEveryPuzzleInTheCorpus() {
-        (Puzzles.all + GeneratedPuzzles.all).forEach { puzzle ->
+        (Puzzles.all + GeneratedPuzzles.all + HardPuzzles.all).forEach { puzzle ->
             val result = SudokuSolver().solve(puzzle.field())
 
             assertThat(result)

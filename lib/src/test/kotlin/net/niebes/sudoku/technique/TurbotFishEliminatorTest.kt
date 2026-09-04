@@ -1,6 +1,7 @@
 package net.niebes.sudoku.technique
 
 import net.niebes.sudoku.GeneratedPuzzles
+import net.niebes.sudoku.HardPuzzles
 import net.niebes.sudoku.Puzzles
 import net.niebes.sudoku.SudokuSolver
 import net.niebes.sudoku.deduction.RecordingDeductionListener
@@ -100,7 +101,7 @@ internal class TurbotFishEliminatorTest {
 
     @Test
     fun neverRemovesAValueTheSolutionNeeds() {
-        (Puzzles.all + GeneratedPuzzles.all).forEach { puzzle ->
+        (Puzzles.all + GeneratedPuzzles.all + HardPuzzles.all).forEach { puzzle ->
             val settled = SudokuSolver(listOf(HouseCandidateEliminator())).propagate(puzzle.field()).field
 
             TurbotFishEliminator().eliminations(settled).forEach { elimination ->

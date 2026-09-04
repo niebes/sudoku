@@ -48,7 +48,7 @@ internal class LevelCoverageTest {
 
     @Test
     fun searchStillFinishesWhatPropagationCannot() {
-        GeneratedPuzzles.all.forEach { puzzle ->
+        (GeneratedPuzzles.all + HardPuzzles.all).forEach { puzzle ->
             val result = SudokuSolver().solve(puzzle.field())
 
             assertThat(result).describedAs(puzzle.givens).isInstanceOf(Solved::class.java)
@@ -57,8 +57,25 @@ internal class LevelCoverageTest {
     }
 
     @Test
+    fun aPuzzleIsCreditedOnlyToTheCheapestTechniqueThatCouldHaveSolvedIt() {
+        // The solver stops at the first technique that makes progress, so a puzzle that singles can
+        // finish is never credited to anything above them. Running the whole chain on every pass
+        // used to hand a jellyfish the credit for work a naked single was about to do anyway.
+        val recorder = RecordingDeductionListener()
+
+        SudokuSolver(recorder).propagate(Puzzles.singlesOnly.field())
+
+        assertThat(recorder.techniquesUsed()).containsExactlyInAnyOrder(
+            Technique.PEER_ELIMINATION,
+            Technique.FULL_HOUSE,
+            Technique.NAKED_SINGLE,
+            Technique.HIDDEN_SINGLE
+        )
+    }
+
+    @Test
     fun everyImplementedTechniqueEarnsItsPlaceOnSomePuzzle() {
-        val used = (Puzzles.all + GeneratedPuzzles.all).flatMapTo(mutableSetOf()) { puzzle ->
+        val used = (Puzzles.all + GeneratedPuzzles.all + HardPuzzles.all).flatMapTo(mutableSetOf()) { puzzle ->
             RecordingDeductionListener()
                 .also { SudokuSolver(it).solve(puzzle.field()) }
                 .techniquesUsed()
@@ -76,8 +93,8 @@ internal class LevelCoverageTest {
         assertThat(chain).containsExactly(
             "FullHouseSolver",              // level 1
             "HouseCandidateEliminator",     // level 1 - keeps candidates honest for everything below
-            "SingleCandidateMarker",        // level 1
             "SolveSingleCandidateTransformer", // level 1
+            "SingleCandidateMarker",        // level 1
             "PointingEliminator",           // level 2
             "ClaimingEliminator",           // level 2
             "NakedSubsetEliminator",        // level 3

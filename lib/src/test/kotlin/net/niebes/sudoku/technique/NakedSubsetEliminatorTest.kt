@@ -1,5 +1,7 @@
 package net.niebes.sudoku.technique
 
+import net.niebes.sudoku.GeneratedPuzzles
+import net.niebes.sudoku.HardPuzzles
 import net.niebes.sudoku.Puzzles
 import net.niebes.sudoku.SudokuSolver
 import net.niebes.sudoku.candidatesAt
@@ -124,11 +126,16 @@ internal class NakedSubsetEliminatorTest {
     }
 
     @Test
-    fun contributesToRealPuzzles() {
-        val recorder = RecordingDeductionListener()
+    fun isTheCheapestAvailableTechniqueOnSomeRealPuzzle() {
+        // Naming one puzzle here would be brittle: the solver stops at the first technique that
+        // makes progress, so whether this one is ever reached depends on what the cheaper ones
+        // leave behind. Asking the whole corpus keeps the point - it still pays its way - without
+        // pinning it to a puzzle that a cheaper technique may start finishing tomorrow.
+        val used = (Puzzles.all + GeneratedPuzzles.all + HardPuzzles.all).flatMapTo(mutableSetOf()) {
+            RecordingDeductionListener().also { recorder -> SudokuSolver(recorder).solve(it.field()) }
+                .techniquesUsed()
+        }
 
-        SudokuSolver(recorder).solve(Puzzles.needsSubsets.field())
-
-        assertThat(recorder.techniquesUsed()).contains(Technique.NAKED_SUBSET)
+        assertThat(used).contains(Technique.NAKED_SUBSET)
     }
 }
