@@ -4,7 +4,7 @@ import net.niebes.sudoku.io.CompactFieldParser
 import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.SolvedCell
 
-internal data class Puzzle(val givens: String, val solution: String) {
+data class Puzzle(val givens: String, val solution: String) {
     fun field(): Field = CompactFieldParser().parse(givens)
     fun solved(): Field = CompactFieldParser().parse(solution)
 
