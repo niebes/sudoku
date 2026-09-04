@@ -36,6 +36,9 @@ value class Candidates(val mask: Int) {
 
         fun of(vararg values: Int): Candidates = of(values.asIterable())
 
-        private fun bitOf(value: Int) = 1 shl (value - 1)
+        private fun bitOf(value: Int): Int {
+            require(value in 1..9) { "$value is not a sudoku value" }
+            return 1 shl (value - 1)
+        }
     }
 }

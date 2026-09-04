@@ -5,10 +5,11 @@ sealed class Cell(
 ) {
     companion object {
         fun new(position: CellPosition) = UnsolvedCell(position)
-        fun new(position: CellPosition, candidates: Set<Int>) = when (candidates.size){
-            0 ->  UnsolvedCell(position)
-            1 ->  SolvedCell(position, candidates.first())
-            else -> UnsolvedCell(position, Candidates.of(candidates))
+        /** No candidates means "nothing known about this cell", so it starts with all of them. */
+        fun new(position: CellPosition, candidates: Candidates) = when (candidates.size) {
+            0 -> UnsolvedCell(position)
+            1 -> SolvedCell(position, candidates.single())
+            else -> UnsolvedCell(position, candidates)
         }
 
         fun new(position: CellPosition, value: Int?) =
