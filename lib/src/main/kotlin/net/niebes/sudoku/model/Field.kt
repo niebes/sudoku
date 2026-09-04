@@ -33,6 +33,20 @@ class Field(cells: Collection<Cell>) {
         Intersection(segment.house(), line.house(), shared.cellsOf())
     }
 
+    /** True when the two cells share a house, so they cannot both hold the same value. */
+    fun sees(a: CellPosition, b: CellPosition): Boolean = a != b && b.index in PEERS[a.index]
+
+    /**
+     * Houses in which [value] has exactly two possible cells. Houses that already hold the value are
+     * skipped: cells there can still carry it as a candidate that peer elimination has not caught up
+     * with, and pairing two of those would assert a link between cells that cannot hold it at all.
+     */
+    fun conjugatePairs(value: Int): List<ConjugatePair> = houses().mapNotNull { house ->
+        if (house.holds(value)) return@mapNotNull null
+        val places = house.candidatesFor(value)
+        if (places.size != 2) null else ConjugatePair(value, house, places[0], places[1])
+    }
+
     /** Values already placed in any house of [position], and so unavailable to it. */
     fun solvedPeers(position: CellPosition): Candidates {
         var placed = Candidates.NONE
