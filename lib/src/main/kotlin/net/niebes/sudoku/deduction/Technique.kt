@@ -43,6 +43,9 @@ enum class Technique {
     /** Like XY_WING, but the pivot could take the shared value too, so it eliminates less. */
     XYZ_WING,
 
+    /** Two cells holding the same pair, joined by a strong link that forces one onto its other value. */
+    W_WING,
+
     /** Propagation stalled, so the value is an assumption search may withdraw. */
     GUESS
 }

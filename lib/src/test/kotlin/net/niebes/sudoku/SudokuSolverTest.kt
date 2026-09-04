@@ -213,13 +213,16 @@ internal class SudokuSolverTest {
         val hard = RecordingDeductionListener()
         assertThat(SudokuSolver(hard).solve(needsSearch)).isInstanceOf(Solved::class.java)
 
-        assertThat(easy.deductions).isNotEmpty()
-        assertThat(easy.deductions.map { it.technique }).doesNotContain(Technique.GUESS)
-        assertThat(easy.guesses).isZero()
-        // Both are reported through the listener rather than printed, and the harder puzzle simply
-        // draws on more techniques - it stopped needing search once fish and turbot fish landed.
-        assertThat(hard.techniquesUsed()).containsAll(easy.techniquesUsed())
-        assertThat(hard.deductions.size).isGreaterThan(easy.deductions.size)
+        // Both puzzles report through the listener rather than printing, and both are now finished
+        // by the technique chain alone - the second one needed search until fish and wings landed.
+        listOf(easy, hard).forEach { recorded ->
+            assertThat(recorded.guesses).isZero()
+            assertThat(recorded.deductions.map { it.technique }).doesNotContain(Technique.GUESS)
+            assertThat(recorded.placements).isNotEmpty()
+            assertThat(recorded.eliminations).isNotEmpty()
+            assertThat(recorded.deductions)
+                .hasSize(recorded.placements.size + recorded.eliminations.size)
+        }
     }
 
     private fun solutionEquals(input: Field, expectedSolution: Field) {

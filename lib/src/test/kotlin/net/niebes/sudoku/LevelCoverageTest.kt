@@ -43,7 +43,7 @@ internal class LevelCoverageTest {
         }
 
         // A floor, not a target: a new technique should be free to raise it.
-        assertThat(withoutGuessing).isGreaterThanOrEqualTo(23)
+        assertThat(withoutGuessing).isGreaterThanOrEqualTo(24)
     }
 
     @Test
@@ -85,7 +85,8 @@ internal class LevelCoverageTest {
             "BasicFishEliminator",          // level 4
             "TurbotFishEliminator",         // level 5
             "XyWingEliminator",             // level 5
-            "XyzWingEliminator"             // level 5
+            "XyzWingEliminator",            // level 5
+            "WWingEliminator"               // level 5
         )
     }
 }

@@ -17,6 +17,7 @@ import net.niebes.sudoku.technique.PointingEliminator
 import net.niebes.sudoku.technique.SingleCandidateMarker
 import net.niebes.sudoku.technique.SolveSingleCandidateTransformer
 import net.niebes.sudoku.technique.TurbotFishEliminator
+import net.niebes.sudoku.technique.WWingEliminator
 import net.niebes.sudoku.technique.XyWingEliminator
 import net.niebes.sudoku.technique.XyzWingEliminator
 
@@ -42,7 +43,8 @@ class SudokuSolver(
         BasicFishEliminator(),
         TurbotFishEliminator(),
         XyWingEliminator(),
-        XyzWingEliminator()
+        XyzWingEliminator(),
+        WWingEliminator()
     ), deductions)
 
     fun solve(field: Field): SolveResult = search(field)
