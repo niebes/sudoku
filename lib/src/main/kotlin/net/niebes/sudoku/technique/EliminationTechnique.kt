@@ -33,7 +33,7 @@ interface EliminationTechnique : FieldProcessor {
             val removable = cell.candidates and elimination.values
             if (removable.isEmpty()) return@forEach
 
-            deductions.onDeduction(Elimination(technique, elimination.at, removable))
+            deductions.onDeduction(Elimination(technique, elimination.at, removable, elimination.because))
             cells[elimination.at.index] = UnsolvedCell(cell.position, cell.candidates - removable)
         }
         return Field(cells)
