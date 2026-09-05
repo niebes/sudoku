@@ -9,19 +9,31 @@
 <body>
 <header>
   <h1>Watch a Sudoku being solved</h1>
-  <p class="tagline">The answer, every deduction on the way to it, and the technique behind each one.</p>
+  <p class="tagline">Enter any puzzle: the answer, every deduction on the way to it, and the technique behind each one.</p>
 </header>
 
 <main>
   <section id="setup">
     <div class="setup-grid">
-      <div id="entry-grid" class="grid" aria-label="puzzle entry grid"></div>
+      <div class="entry-side">
+        <p class="entry-hint">Type your puzzle straight into the grid: click a cell, digits
+          <strong>1&ndash;9</strong>, arrow keys to move, backspace to clear &mdash; or use the pad below.
+          Pasting a puzzle onto the grid works too.</p>
+        <div id="entry-grid" class="grid" aria-label="puzzle entry grid"></div>
+        <div id="keypad" class="keypad" aria-label="number pad">
+          <button data-digit="1">1</button><button data-digit="2">2</button><button data-digit="3">3</button>
+          <button data-digit="4">4</button><button data-digit="5">5</button><button data-digit="6">6</button>
+          <button data-digit="7">7</button><button data-digit="8">8</button><button data-digit="9">9</button>
+          <button data-digit="0" title="clear the selected cell">&#9003;</button>
+        </div>
+        <p id="entry-status" class="counter"></p>
+      </div>
       <div class="setup-side">
         <label for="compact">Or paste a puzzle in one-line form: 81 characters, any non-digit for a blank.</label>
         <textarea id="compact" rows="3" spellcheck="false"
           placeholder="53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79"></textarea>
         <div class="samples">
-          <span>Try one:</span>
+          <span>No puzzle at hand? Try one:</span>
           <button data-sample="53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79">Easy</button>
           <button data-sample=".........5..276.....8.....47...5...9.....9......82.1.5..4...93.2.1......3......42">Needs pointing</button>
           <button data-sample="..9.1.74.2.............4.3...7...9..8.3..6.....4.2..1...6..14.94.....3.8....7...1">Needs subsets</button>

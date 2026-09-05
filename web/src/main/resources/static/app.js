@@ -9,6 +9,7 @@ const ALL = 0x1ff; // nine candidate bits, mirroring the solver's representation
 // ---------- entry grid ----------
 
 const entryCells = [];
+let selectedEntry = 0; // where the keypad writes: the cell last focused by click, tab or arrows
 
 function buildEntryGrid() {
   const grid = $('entry-grid');
@@ -18,10 +19,16 @@ function buildEntryGrid() {
     cell.tabIndex = 0;
     cell.dataset.index = i;
     cell.addEventListener('keydown', onEntryKey);
-    cell.addEventListener('focus', () => cell.classList.add('focused'));
+    cell.addEventListener('focus', () => { selectedEntry = i; cell.classList.add('selected'); });
+    cell.addEventListener('blur', () => cell.classList.remove('selected'));
     grid.appendChild(cell);
     entryCells.push(cell);
   }
+  // Anywhere on the setup screen except the textarea, which handles its own pasting.
+  document.addEventListener('paste', (event) => {
+    if ($('setup').hidden || event.target.tagName === 'TEXTAREA') return;
+    onEntryPaste(event);
+  });
 }
 
 function boxEdges(i) {
@@ -43,7 +50,60 @@ function onEntryKey(event) {
   else if (event.key === 'ArrowUp') focusEntry(i - 9);
   else return;
   event.preventDefault();
+  entryChanged();
+}
+
+function onKeypad(digit) {
+  entryCells[selectedEntry].textContent = digit === 0 ? '' : digit;
+  entryChanged();
+  focusEntry(digit === 0 ? selectedEntry : selectedEntry + 1);
+}
+
+// Accepts any pasted text that still holds 81 cells once whitespace and separators are gone -
+// the one-line form, but also grids copied row by row.
+function onEntryPaste(event) {
+  event.preventDefault();
+  const cleaned = (event.clipboardData.getData('text') || '').replace(/[\s|,+\-]/g, '');
+  if (cleaned.length !== 81) {
+    return showSetupError('That paste has ' + cleaned.length + ' cells after removing spacing; a puzzle needs 81.');
+  }
+  $('compact').value = cleaned;
+  setEntry(cleaned);
+  entryChanged();
+}
+
+// Everything a change to the entry grid keeps in step: the one-line form, the red marking of
+// givens that collide, and the count underneath.
+function entryChanged() {
   $('compact').value = entryCompact();
+  refreshEntryFeedback();
+}
+
+// The feedback alone - the textarea path calls this without writing compact back, which would
+// otherwise normalise the line out from under whoever is still typing it.
+function refreshEntryFeedback() {
+  $('setup-error').hidden = true;
+  const values = entryCells.map((cell) => cell.textContent);
+  const conflicted = new Set();
+  for (let a = 0; a < 81; a++) {
+    if (!values[a]) continue;
+    for (let b = a + 1; b < 81; b++) {
+      if (values[b] === values[a] && sharesHouse(a, b)) { conflicted.add(a); conflicted.add(b); }
+    }
+  }
+  entryCells.forEach((cell, i) => cell.classList.toggle('conflict', conflicted.has(i)));
+
+  const givens = values.filter(Boolean).length;
+  $('entry-status').textContent = givens === 0 ? ''
+    : conflicted.size > 0 ? 'The cells in red collide - the same digit twice in one row, column or box.'
+    : givens + (givens === 1 ? ' given' : ' givens')
+      + (givens < 17 ? ' - a puzzle with one solution needs at least 17' : '');
+}
+
+function sharesHouse(a, b) {
+  const rowA = Math.floor(a / 9), colA = a % 9, rowB = Math.floor(b / 9), colB = b % 9;
+  return rowA === rowB || colA === colB
+    || (Math.floor(rowA / 3) === Math.floor(rowB / 3) && Math.floor(colA / 3) === Math.floor(colB / 3));
 }
 
 function focusEntry(i) {
@@ -274,10 +334,16 @@ function wire() {
     button.addEventListener('click', () => {
       $('compact').value = button.dataset.sample;
       setEntry(button.dataset.sample);
+      refreshEntryFeedback();
     }));
-  $('compact').addEventListener('input', () => setEntry($('compact').value));
+  document.querySelectorAll('#keypad [data-digit]').forEach((button) => {
+    // mousedown would move focus to the button; keeping it on the grid keeps the selection visible
+    button.addEventListener('mousedown', (event) => event.preventDefault());
+    button.addEventListener('click', () => onKeypad(Number(button.dataset.digit)));
+  });
+  $('compact').addEventListener('input', () => { setEntry($('compact').value); refreshEntryFeedback(); });
   $('solve').addEventListener('click', requestSolve);
-  $('clear').addEventListener('click', () => { $('compact').value = ''; setEntry(''); });
+  $('clear').addEventListener('click', () => { $('compact').value = ''; setEntry(''); refreshEntryFeedback(); });
   $('btn-first').addEventListener('click', () => { stopPlaying(); goTo(0); });
   $('btn-back').addEventListener('click', () => { stopPlaying(); goTo(current - 1); });
   $('btn-next').addEventListener('click', () => { stopPlaying(); goTo(current + 1); });

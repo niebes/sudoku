@@ -56,9 +56,14 @@ footer { padding: 2rem 1.25rem 3rem; color: #5a5344; font-size: .9rem; }
 .marks .gone { color: var(--removed); font-weight: bold; text-decoration: line-through; }
 
 /* entry grid */
+.entry-side { display: flex; flex-direction: column; gap: .7rem; }
+.entry-hint { margin: 0; max-width: min(92vw, 480px); font-size: .92rem; color: #5a5344; }
 #entry-grid .cell { cursor: text; }
-#entry-grid .cell:focus { outline: 2px solid var(--because); }
-#entry-grid .cell.conflict { color: var(--removed); }
+#entry-grid .cell:focus, #entry-grid .cell.selected { outline: 2px solid var(--because); background: var(--because-bg); }
+#entry-grid .cell.conflict { color: var(--removed); background: #f7dcda; }
+.keypad { display: grid; grid-template-columns: repeat(10, 1fr); gap: .3rem; width: min(92vw, 480px); }
+.keypad button { padding: .45rem 0; font-size: 1.05rem; }
+#entry-status { min-height: 1.4em; margin: 0; }
 
 /* --- setup layout --- */
 .setup-grid, .player-grid { display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-start; }

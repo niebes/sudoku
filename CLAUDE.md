@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow
+
+Commit and push after every completed work package — don't leave finished work sitting in the
+working tree.
+
 ## Build & test
 
 Gradle wrapper, single subproject `lib` (Kotlin/JVM 2.1.20, Java toolchain 21, JUnit 5 + AssertJ).
