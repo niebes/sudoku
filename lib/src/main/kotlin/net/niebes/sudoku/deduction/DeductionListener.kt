@@ -7,6 +7,13 @@ package net.niebes.sudoku.deduction
 fun interface DeductionListener {
     fun onDeduction(deduction: Deduction)
 
+    /**
+     * Search withdrew its most recent guess: every deduction since that guess - the guess included -
+     * described a grid that turned out impossible, not the puzzle. A listener that replays or
+     * teaches from the trace must discard that stretch; one that only counts work may ignore this.
+     */
+    fun onBranchAbandoned() {}
+
     companion object {
         val IGNORE = DeductionListener { }
     }

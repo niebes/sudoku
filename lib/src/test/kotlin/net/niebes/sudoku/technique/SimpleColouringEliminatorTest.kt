@@ -57,6 +57,10 @@ internal class SimpleColouringEliminatorTest {
     @Test
     fun colourTrapClearsACellThatSeesBothColours() {
         assertThat(colourTrapOn7().colouringOn(7)).containsExactly(CellPosition(3, 0))
+        // The evidence is one cell of each colour the trapped cell sees.
+        assertThat(SimpleColouringEliminator().eliminations(colourTrapOn7())
+            .filter { it.values == Candidates.of(7) })
+            .allMatch { it.because == listOf(CellPosition(0, 0), CellPosition(3, 3)) }
     }
 
     @Test
@@ -65,6 +69,12 @@ internal class SimpleColouringEliminatorTest {
         assertThat(colourWrapOn7().colouringOn(7))
             .contains(CellPosition(0, 0), CellPosition(2, 2))
             .doesNotContain(CellPosition(0, 2))
+        // The wrapped cells cite the same-coloured pair whose shared house sinks the colour.
+        // Cells outside the chain lose their 7 by the trap rule and carry its evidence instead.
+        assertThat(SimpleColouringEliminator().eliminations(colourWrapOn7())
+            .filter { it.at == CellPosition(0, 0) || it.at == CellPosition(2, 2) })
+            .isNotEmpty()
+            .allMatch { it.because == listOf(CellPosition(0, 0), CellPosition(2, 2)) }
     }
 
     @Test

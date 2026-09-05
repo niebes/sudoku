@@ -109,6 +109,10 @@ internal class ClaimingEliminatorTest {
         assertThat(recorder.eliminations).allMatch { it.technique == Technique.CLAIMING }
         assertThat(recorder.eliminations.map { it.at })
             .containsExactlyInAnyOrderElementsOf(insideSegmentOffTheRow)
+        // The evidence is the overlap: the cells the value is confined to.
+        assertThat(recorder.eliminations).allMatch {
+            it.because == listOf(CellPosition(1, 0), CellPosition(1, 1), CellPosition(1, 2))
+        }
     }
 
     @Test

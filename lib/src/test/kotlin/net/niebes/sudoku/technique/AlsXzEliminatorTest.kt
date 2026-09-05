@@ -41,6 +41,11 @@ internal class AlsXzEliminatorTest {
             CellPosition(0, 5), CellPosition(1, 5), CellPosition(2, 5),
             CellPosition(3, 4), CellPosition(5, 4)
         )
+        // The evidence is both sets' cells; a later pair of sets reaching the same conclusion
+        // must not surface it twice under different evidence.
+        assertThat(AlsXzEliminator().eliminations(alsXzOn3())
+            .filter { it.values == Candidates.of(3) })
+            .allMatch { it.because == listOf(CellPosition(0, 4), CellPosition(4, 4), CellPosition(4, 5)) }
     }
 
     @Test

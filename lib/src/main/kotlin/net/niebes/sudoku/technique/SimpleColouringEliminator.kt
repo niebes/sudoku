@@ -72,10 +72,13 @@ class SimpleColouringEliminator : EliminationTechnique {
         field: Field,
         value: Int,
         sides: Pair<List<CellPosition>, List<CellPosition>>
-    ): List<Elimination> = sides.toList()
-        .filter { side -> side.any { a -> side.any { b -> field.sees(a, b) } } }
-        .flatten()
-        .map { Elimination(technique, it, Candidates.of(value)) }
+    ): List<Elimination> = sides.toList().flatMap { side ->
+        // The same-coloured pair sharing a house is the evidence for the whole colour going.
+        val collision = side.firstNotNullOfOrNull { a ->
+            side.firstOrNull { b -> field.sees(a, b) }?.let { listOf(a, it) }
+        } ?: return@flatMap emptyList()
+        side.map { Elimination(technique, it, Candidates.of(value), collision) }
+    }
 
     private fun trap(
         field: Field,
@@ -88,7 +91,12 @@ class SimpleColouringEliminator : EliminationTechnique {
 
         return field.unsolved()
             .filter { it.position !in group && it.couldBe(value) }
-            .filter { cell -> a.any { field.sees(cell.position, it) } && b.any { field.sees(cell.position, it) } }
-            .map { Elimination(technique, it.position, Candidates.of(value)) }
+            .mapNotNull { cell ->
+                // One cell of each colour that the trapped cell sees: whichever colour is true,
+                // one of these two holds the value.
+                val seesA = a.firstOrNull { field.sees(cell.position, it) } ?: return@mapNotNull null
+                val seesB = b.firstOrNull { field.sees(cell.position, it) } ?: return@mapNotNull null
+                Elimination(technique, cell.position, Candidates.of(value), listOf(seesA, seesB))
+            }
     }
 }

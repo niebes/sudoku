@@ -25,8 +25,11 @@ internal class AicEliminatorTest {
             candidates(4, 6, 2, 4)
         })
 
+        // One elimination, one chain: the cells the chain passes through, end to end. A second
+        // chain reaching the same conclusion must not surface as a second elimination.
         assertThat(eliminated).containsExactly(
-            Elimination(Technique.AIC, CellPosition(4, 0), Candidates.of(4))
+            Elimination(Technique.AIC, CellPosition(4, 0), Candidates.of(4),
+                because = listOf(CellPosition(0, 0), CellPosition(0, 6), CellPosition(4, 6)))
         )
     }
 
@@ -43,8 +46,14 @@ internal class AicEliminatorTest {
             candidates(0, 4, 2, 9)
         })
 
+        // The chain leaves (4,4) as a 1, walks the grid, and returns to it as a 2 - so the
+        // evidence begins and ends at the cell itself.
         assertThat(eliminated).contains(
-            Elimination(Technique.AIC, CellPosition(4, 4), Candidates.of(3))
+            Elimination(Technique.AIC, CellPosition(4, 4), Candidates.of(3),
+                because = listOf(
+                    CellPosition(4, 4), CellPosition(4, 0), CellPosition(0, 0),
+                    CellPosition(0, 4), CellPosition(4, 4)
+                ))
         )
     }
 

@@ -46,6 +46,21 @@ internal class EliminationTechniqueTest {
     }
 
     @Test
+    fun carriesTheSupportingCellsThroughToTheListener() {
+        // process rebuilds each elimination around what was actually removable; the evidence the
+        // technique attached must survive that rebuild, or every because-list dies right here.
+        val recorder = RecordingDeductionListener()
+        val before = field { candidates(0, 0, 1, 2) }
+        val because = listOf(CellPosition(5, 5), CellPosition(6, 6))
+
+        technique(Elimination(Technique.PEER_ELIMINATION, CellPosition(0, 0), Candidates.of(1, 9), because))
+            .process(before, recorder)
+
+        assertThat(recorder.eliminations).singleElement()
+            .isEqualTo(Elimination(Technique.PEER_ELIMINATION, CellPosition(0, 0), Candidates.of(1), because))
+    }
+
+    @Test
     fun staysSilentAndReturnsTheSameFieldWhenNothingApplies() {
         val recorder = RecordingDeductionListener()
         val before = field { candidates(0, 0, 1, 2) }

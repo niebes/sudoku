@@ -33,8 +33,10 @@ internal class HouseCandidateEliminatorTest {
             rowCandidates(0, 2..8, 8, 9)
         }, recorder)
 
+        // The solved peer that holds the 4 is the whole of the argument.
         assertThat(recorder.eliminations).contains(
-            Elimination(Technique.PEER_ELIMINATION, CellPosition(0, 1), Candidates.of(4))
+            Elimination(Technique.PEER_ELIMINATION, CellPosition(0, 1), Candidates.of(4),
+                because = listOf(CellPosition(0, 0)))
         )
         assertThat(recorder.deductions).allMatch { it.technique == Technique.PEER_ELIMINATION }
     }

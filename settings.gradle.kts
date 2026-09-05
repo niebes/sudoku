@@ -13,3 +13,5 @@ plugins {
 
 rootProject.name = "sudoku"
 include("lib")
+include("api")
+include("web")

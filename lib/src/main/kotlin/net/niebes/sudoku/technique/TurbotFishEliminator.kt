@@ -42,7 +42,7 @@ class TurbotFishEliminator : EliminationTechnique {
                             if (corners.size != 4) return@join
                             if (!field.sees(joinedA.position, joinedB.position)) return@join
 
-                            addAll(clear(field, value, farA, farB))
+                            addAll(clear(field, value, farA, joinedA, joinedB, farB))
                         }
                     }
                 }
@@ -51,8 +51,18 @@ class TurbotFishEliminator : EliminationTechnique {
     }
 
     /** One of [farA] and [farB] holds the value, so nothing seeing both of them can. */
-    private fun clear(field: Field, value: Int, farA: UnsolvedCell, farB: UnsolvedCell): List<Elimination> =
-        field.seenByBoth(farA.position, farB.position)
+    private fun clear(
+        field: Field,
+        value: Int,
+        farA: UnsolvedCell,
+        joinedA: UnsolvedCell,
+        joinedB: UnsolvedCell,
+        farB: UnsolvedCell
+    ): List<Elimination> {
+        // The chain read end to end, which is how the alternative-by-alternative argument walks it.
+        val chain = listOf(farA.position, joinedA.position, joinedB.position, farB.position)
+        return field.seenByBoth(farA.position, farB.position)
             .filter { it.couldBe(value) }
-            .map { Elimination(technique, it.position, Candidates.of(value)) }
+            .map { Elimination(technique, it.position, Candidates.of(value), chain) }
+    }
 }

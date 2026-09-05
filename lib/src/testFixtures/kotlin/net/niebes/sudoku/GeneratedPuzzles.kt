@@ -9,7 +9,7 @@ package net.niebes.sudoku
  * enough surface for that to show up. Every one of these is checked to make sure propagation never
  * removes a candidate the solution needs.
  */
-internal object GeneratedPuzzles {
+object GeneratedPuzzles {
     val all: List<Puzzle> = listOf(
         Puzzle(
             "...4.1.5...7....3..2...6.4..9..8..12.....7.9......34...5....9.496.2.........7.6..",

@@ -12,6 +12,9 @@ plugins {
 
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
+
+    // The puzzle corpora live in testFixtures so that other modules can measure against them.
+    `java-test-fixtures`
 }
 
 repositories {

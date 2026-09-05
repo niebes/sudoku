@@ -4,7 +4,7 @@ package net.niebes.sudoku
  * Puzzles with verified unique solutions, named for the shallowest technique family that finishes
  * them. Used to check that techniques are sound and that they earn their place.
  */
-internal object Puzzles {
+object Puzzles {
     val classic = Puzzle(
         "53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79",
         "534678912672195348198342567859761423426853791713924856961537284287419635345286179"

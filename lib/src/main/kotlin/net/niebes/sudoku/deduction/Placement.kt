@@ -6,7 +6,8 @@ import net.niebes.sudoku.model.CellPosition
 data class Placement(
     override val technique: Technique,
     override val at: CellPosition,
-    val value: Int
+    val value: Int,
+    override val because: List<CellPosition> = emptyList()
 ) : Deduction {
     override fun toString(): String = "$technique: $at = $value"
 }

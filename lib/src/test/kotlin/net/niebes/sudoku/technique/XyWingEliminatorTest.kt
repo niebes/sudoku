@@ -30,8 +30,10 @@ internal class XyWingEliminatorTest {
     fun clearsTheSharedValueFromWhatSeesBothPincers() {
         val eliminated = XyWingEliminator().eliminations(xyWingOn3())
 
+        // Pivot first, then the pincers: the order the argument reads in.
         assertThat(eliminated).containsExactly(
-            Elimination(Technique.XY_WING, CellPosition(5, 6), Candidates.of(3))
+            Elimination(Technique.XY_WING, CellPosition(5, 6), Candidates.of(3),
+                because = listOf(CellPosition(1, 1), CellPosition(1, 6), CellPosition(5, 1)))
         )
     }
 

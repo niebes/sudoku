@@ -64,6 +64,14 @@ class Field(cells: Collection<Cell>) {
         return placed
     }
 
+    /** The solved peers of [position] holding one of [values] - the cells that make those values unavailable. */
+    fun solvedPeersHolding(position: CellPosition, values: Candidates): List<CellPosition> = buildList {
+        for (index in PEERS[position.index]) {
+            val peer = cells[index]
+            if (peer is SolvedCell && values.contains(peer.value)) add(peer.position)
+        }
+    }
+
     /** Returns a copy with [position] fixed to [value]. The model is immutable, so search needs no undo. */
     fun assign(position: CellPosition, value: Int): Field =
         Field(cells.toMutableList().also { it[position.index] = SolvedCell(position, value) })

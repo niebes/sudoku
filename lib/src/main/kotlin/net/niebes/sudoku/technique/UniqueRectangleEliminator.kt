@@ -62,6 +62,7 @@ class UniqueRectangleEliminator : EliminationTechnique {
         // deadly pattern itself - an improper puzzle, with nothing here to remove.
         if (!(pair - odd.candidates).isEmpty() || odd.candidates == pair) return null
 
-        return Elimination(technique, odd.position, pair)
+        val bare = cells.filter { it.candidates == pair }.map { it.position }
+        return Elimination(technique, odd.position, pair, bare)
     }
 }

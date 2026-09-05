@@ -63,10 +63,13 @@ class BasicFishEliminator(private val sizes: IntRange = 2..4) : EliminationTechn
                 if (coverLines.any { covers.getValue(it).holds(value) }) return@shape
 
                 val baseLines = chosen.mapTo(mutableSetOf()) { it.first.index }
+                // The evidence is every place the base lines leave for the value - the corners of
+                // the fish, which between them claim one copy per cover line.
+                val corners = chosen.flatMap { (base, _) -> base.candidatesFor(value).map { it.position } }
                 coverLines.forEach { coverLine ->
                     covers.getValue(coverLine).cells
                         .filter { it.couldBe(value) && it.position.lineIndex(baseKind) !in baseLines }
-                        .forEach { add(Elimination(technique, it.position, Candidates.of(value))) }
+                        .forEach { add(Elimination(technique, it.position, Candidates.of(value), corners)) }
                 }
             }
         }

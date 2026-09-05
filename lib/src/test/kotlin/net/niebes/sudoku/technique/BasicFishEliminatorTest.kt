@@ -140,6 +140,10 @@ internal class BasicFishEliminatorTest {
 
         assertThat(recorder.eliminations).isNotEmpty()
         assertThat(recorder.eliminations).allMatch { it.technique == Technique.BASIC_FISH }
+        // The evidence is the four corners: every place the base rows leave for the value.
+        assertThat(recorder.eliminations).allMatch {
+            it.because == listOf(CellPosition(1, 2), CellPosition(1, 6), CellPosition(4, 2), CellPosition(4, 6))
+        }
     }
 
     @Test

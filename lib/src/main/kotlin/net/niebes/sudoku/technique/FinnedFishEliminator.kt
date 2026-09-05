@@ -77,13 +77,16 @@ class FinnedFishEliminator(private val sizes: IntRange = 2..3) : EliminationTech
         if (fins.isEmpty() || fins.size == finnedPlaces.size) return emptyList()
 
         val baseLines = chosen.mapTo(mutableSetOf()) { (base, _) -> base.index }
+        // Every place the base lines leave for the value, fins included - the fin is exactly the
+        // part of the evidence that keeps this from being a plain fish.
+        val corners = chosen.flatMap { (_, places) -> places.map { it.position } }
         return coverLines.flatMap { coverLine ->
             covers.getValue(coverLine).cells.filter { cell ->
                 cell.couldBe(value) &&
                     cell.position.lineIndex(baseKind) !in baseLines &&
                     fins.all { field.sees(cell.position, it.position) }
             }
-        }.map { Elimination(technique, it.position, Candidates.of(value)) }
+        }.map { Elimination(technique, it.position, Candidates.of(value), corners) }
     }
 
     private fun CellPosition.lineIndex(kind: HouseKind): Int =

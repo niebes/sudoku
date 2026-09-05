@@ -3,6 +3,7 @@ package net.niebes.sudoku.technique
 import net.niebes.sudoku.deduction.Elimination
 import net.niebes.sudoku.deduction.Technique
 import net.niebes.sudoku.model.Candidates
+import net.niebes.sudoku.model.CellPosition
 import net.niebes.sudoku.model.Field
 import net.niebes.sudoku.model.LinkGraph
 import net.niebes.sudoku.model.Node
@@ -32,12 +33,14 @@ class AicEliminator(private val maxLinks: Int = 9) : EliminationTechnique {
 
     override fun eliminations(field: Field): List<Elimination> {
         val graph = LinkGraph(field)
-        val found = LinkedHashSet<Elimination>()
+        // Keyed by conclusion, not by chain: several chains commonly prove the same elimination,
+        // and only the first proof found is worth reporting as its evidence.
+        val found = LinkedHashMap<Pair<CellPosition, Candidates>, Elimination>()
 
         graph.nodes().forEach { start ->
             extend(field, graph, start, start, linkedSetOf(start), wantStrong = true, links = 0, found = found)
         }
-        return found.toList()
+        return found.values.toList()
     }
 
     private fun extend(
@@ -48,7 +51,7 @@ class AicEliminator(private val maxLinks: Int = 9) : EliminationTechnique {
         chain: LinkedHashSet<Node>,
         wantStrong: Boolean,
         links: Int,
-        found: MutableSet<Elimination>
+        found: LinkedHashMap<Pair<CellPosition, Candidates>, Elimination>
     ) {
         if (links == maxLinks) return
 
@@ -60,7 +63,9 @@ class AicEliminator(private val maxLinks: Int = 9) : EliminationTechnique {
 
             // Only a chain that ends on a strong link proves anything. One strong link on its own
             // is just a conjugate pair, which cheaper techniques have already read.
-            if (wantStrong && links >= 2) found += conclude(field, start, next)
+            if (wantStrong && links >= 2) {
+                conclude(field, start, next, walk(chain, next)).forEach { found.putIfAbsent(it.at to it.values, it) }
+            }
 
             chain += next
             extend(field, graph, start, next, chain, !wantStrong, links + 1, found)
@@ -68,19 +73,30 @@ class AicEliminator(private val maxLinks: Int = 9) : EliminationTechnique {
         }
     }
 
-    private fun conclude(field: Field, start: Node, end: Node): List<Elimination> = when {
+    private fun conclude(field: Field, start: Node, end: Node, walk: List<CellPosition>): List<Elimination> = when {
         start.value == end.value && start.at != end.at ->
             field.seenByBoth(start.at, end.at)
                 .filter { it.couldBe(start.value) }
-                .map { Elimination(technique, it.position, Candidates.of(start.value)) }
+                .map { Elimination(technique, it.position, Candidates.of(start.value), walk) }
 
         start.at == end.at && start.value != end.value ->
             (field.cellAt(start.at) as UnsolvedCell).candidates
                 .minus(Candidates.of(start.value, end.value))
                 .takeIf { !it.isEmpty() }
-                ?.let { listOf(Elimination(technique, start.at, it)) }
+                ?.let { listOf(Elimination(technique, start.at, it, walk)) }
                 .orEmpty()
 
         else -> emptyList()
     }
+
+    /**
+     * The chain's cells in walking order. Consecutive duplicates collapse - a step between two
+     * candidates of one cell is one stop, not two - but a chain that leaves a cell and returns to
+     * it keeps both visits, because that return is the whole story of a same-cell conclusion.
+     */
+    private fun walk(chain: Collection<Node>, end: Node): List<CellPosition> =
+        (chain.map { it.at } + end.at).fold(mutableListOf()) { path, at ->
+            if (path.lastOrNull() != at) path += at
+            path
+        }
 }

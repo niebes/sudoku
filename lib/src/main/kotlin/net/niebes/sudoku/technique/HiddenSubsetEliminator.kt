@@ -35,9 +35,10 @@ class HiddenSubsetEliminator(private val sizes: IntRange = 2..4) : EliminationTe
                     if (cells.size != size) return@subset
 
                     val keep = Candidates.of(values)
+                    val members = cells.map { it.position }
                     cells.forEach { cell ->
                         val extra = cell.candidates - keep
-                        if (!extra.isEmpty()) add(Elimination(technique, cell.position, extra))
+                        if (!extra.isEmpty()) add(Elimination(technique, cell.position, extra, members))
                     }
                 }
             }

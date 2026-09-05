@@ -8,7 +8,7 @@ package net.niebes.sudoku
  * technique that makes progress, a wing or an empty rectangle only ever fires when everything
  * simpler is stuck, which on ordinary puzzles never happens.
  */
-internal object HardPuzzles {
+object HardPuzzles {
     val all: List<Puzzle> = listOf(
         Puzzle(
             "4..9.......7..1..26...5.31....1...68.5...2.....2.3...4.7....8..98......62....4..7",

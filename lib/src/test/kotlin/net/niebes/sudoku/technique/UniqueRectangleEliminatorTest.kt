@@ -31,8 +31,10 @@ internal class UniqueRectangleEliminatorTest {
     fun clearsThePairFromTheCornerThatCarriesExtras() {
         val eliminated = UniqueRectangleEliminator().eliminations(uniqueRectangleOn37())
 
+        // The three corners already down to the bare pair are what make the fourth dangerous.
         assertThat(eliminated).containsExactly(
-            Elimination(Technique.UNIQUE_RECTANGLE, CellPosition(1, 3), Candidates.of(3, 7))
+            Elimination(Technique.UNIQUE_RECTANGLE, CellPosition(1, 3), Candidates.of(3, 7),
+                because = listOf(CellPosition(0, 0), CellPosition(0, 3), CellPosition(1, 0)))
         )
     }
 

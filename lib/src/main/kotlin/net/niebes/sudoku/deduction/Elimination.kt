@@ -7,7 +7,8 @@ import net.niebes.sudoku.model.CellPosition
 data class Elimination(
     override val technique: Technique,
     override val at: CellPosition,
-    val values: Candidates
+    val values: Candidates,
+    override val because: List<CellPosition> = emptyList()
 ) : Deduction {
     override fun toString(): String = "$technique: $at cannot be $values"
 }

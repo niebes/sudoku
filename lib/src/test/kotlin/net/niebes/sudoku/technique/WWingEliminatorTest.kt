@@ -32,9 +32,11 @@ internal class WWingEliminatorTest {
     fun clearsTheOtherValueFromWhatSeesBothCells() {
         val eliminated = WWingEliminator().eliminations(wWingOn6())
 
+        // Read end to end: one pair cell, the link end that sees it, the other end, the other cell.
+        val wing = listOf(CellPosition(0, 0), CellPosition(2, 0), CellPosition(2, 4), CellPosition(4, 4))
         assertThat(eliminated).containsExactlyInAnyOrder(
-            Elimination(Technique.W_WING, CellPosition(0, 4), Candidates.of(6)),
-            Elimination(Technique.W_WING, CellPosition(4, 0), Candidates.of(6))
+            Elimination(Technique.W_WING, CellPosition(0, 4), Candidates.of(6), wing),
+            Elimination(Technique.W_WING, CellPosition(4, 0), Candidates.of(6), wing)
         )
     }
 
