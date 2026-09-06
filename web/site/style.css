@@ -27,7 +27,11 @@ footer { padding: 2rem 1.25rem 3rem; color: #5a5344; font-size: .9rem; }
 
 /* --- the grid --- */
 .grid {
-  display: grid; grid-template-columns: repeat(9, 1fr);
+  /* Nine explicit equal tracks both ways: rows must never size to their content, or a cell
+     gaining a digit makes its whole row taller than the empty ones. */
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-rows: repeat(9, minmax(0, 1fr));
   width: min(92vw, 480px); aspect-ratio: 1;
   border: 2.5px solid var(--line-strong); background: var(--card);
   user-select: none;
@@ -35,7 +39,7 @@ footer { padding: 2rem 1.25rem 3rem; color: #5a5344; font-size: .9rem; }
 .cell {
   border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
   display: flex; align-items: center; justify-content: center;
-  position: relative; font-size: 1.5rem; cursor: default;
+  position: relative; font-size: 1.5rem; line-height: 1; cursor: default;
 }
 .cell:nth-child(9n) { border-right: none; }
 .cell:nth-child(n+73) { border-bottom: none; }
