@@ -9,11 +9,13 @@ working tree.
 
 ## Build & test
 
-Gradle wrapper, single subproject `lib` (Kotlin/JVM 2.1.20, Java toolchain 21, JUnit 5 + AssertJ).
+Gradle wrapper, three subprojects (Kotlin/JVM 2.1.20, Java toolchain 21, JUnit 5 + AssertJ):
+`lib` (the solver), `api` (Spring Boot, one `POST /solve` endpoint) and `web` (the site's static
+assets, packaged onto the classpath so `api` serves them — no build step of their own).
 
 ```bash
 ./gradlew build                 # compile + test
-./gradlew :lib:test             # tests only
+./gradlew :lib:test             # solver tests only
 ./gradlew :lib:test --tests 'net.niebes.sudoku.technique.XyWingEliminatorTest'      # one class
 ./gradlew :lib:test --tests 'net.niebes.sudoku.SudokuSolverTest.round15'            # one test
 ```
@@ -21,6 +23,14 @@ Gradle wrapper, single subproject `lib` (Kotlin/JVM 2.1.20, Java toolchain 21, J
 **Read results from `lib/build/test-results/test/TEST-*.xml`, not the HTML report.** It is JUnit
 XML: `<system-out>` holds the test's stdout and `<failure>` its message. Gradle's failure line links
 to the HTML, which is far more painful to parse.
+
+## Run
+
+`./gradlew :api:bootRun` starts the API **and** the website in one process — `api` has `web` on its
+runtime classpath and Spring's default static resource handling serves it. Open
+<http://localhost:8080/> (default port, nothing configured). Static assets live in
+`web/src/main/resources/static/`; they are read from the classpath, so restart `bootRun` after
+editing them. `./gradlew :api:bootJar` builds the deployable single jar, `api/build/libs/api.jar`.
 
 There is no lint/format task and no CI configuration. Configuration cache, parallel builds and the
 build cache are all enabled in `gradle.properties`, so a stale `.gradle/configuration-cache` is a
@@ -43,8 +53,8 @@ deductions and not the reverse. Tests mirror the package they cover.
 
 ## Architecture
 
-A Sudoku solver: constraint propagation with backtracking search underneath it. There is no `main` —
-the library is exercised through its tests.
+A Sudoku solver: constraint propagation with backtracking search underneath it. `lib` has no `main`
+of its own — it is exercised through its tests and through `api`'s `SudokuApiApplication`.
 
 **Immutable model.** `Cell` is a sealed interface of `SolvedCell` (a `value`) and `UnsolvedCell` (its
 remaining `Candidates`); both are data classes, and that generated equality is load-bearing — it
