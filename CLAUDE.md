@@ -34,7 +34,11 @@ allowGuessing)` on the global scope (wired up in `lib`'s `jsMain`), and `app.js`
 used to POST to an api. The result object's shape is rendered by `SolveResponseJson` and pinned by
 `SolveResponseJsonTest` — change either side only with the other.
 
-There is no lint/format task and no CI configuration. Configuration cache, parallel builds and the
+Every push to main deploys the site to GitHub Pages: `.github/workflows/pages.yml` runs
+`./gradlew build` — the full test suite included, so only a green solver deploys — and publishes
+`web/build/site`.
+
+There is no lint/format task and no other CI. Configuration cache, parallel builds and the
 build cache are all enabled in `gradle.properties`, so a stale `.gradle/configuration-cache` is a
 likely suspect for odd build behaviour.
 

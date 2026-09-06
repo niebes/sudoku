@@ -25,7 +25,8 @@ any static file server:
 python3 -m http.server --directory web/build/site
 ```
 
-To deploy, copy `web/build/site/` to any static host.
+The site deploys itself: every push to `main` builds and publishes it to GitHub Pages at
+<https://niebes.github.io/sudoku/>. For any other host, copy `web/build/site/` there.
 
 ## Using the solver from the page
 
