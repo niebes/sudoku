@@ -27,8 +27,11 @@ to the HTML, which is far more painful to parse.
 ## Run
 
 `./gradlew :web:site` lays the deployable site out in `web/build/site/` — the static assets from
-`web/site/` plus `solver.js`, the webpack bundle `:lib`'s JS target compiles. Open its `index.html`
-directly (plain scripts, so `file://` works) or serve the directory with any static file server.
+`web/site/`, `solver.js` (the webpack bundle `:lib`'s JS target compiles), and `examples.js`
+(where each technique first fires on the corpus, found by `:lib:findTechniqueExamples` running the
+solver over the corpora at build time — the library's "see it live" buttons jump the player
+there). Open its `index.html` directly (plain scripts, so `file://` works) or serve the directory
+with any static file server.
 The solver runs entirely in the page: `solver.js` registers `sudokuSolver.solve(puzzle,
 allowGuessing)` on the global scope (wired up in `lib`'s `jsMain`), and `app.js` calls it where it
 used to POST to an api. The result object's shape is rendered by `SolveResponseJson` and pinned by
@@ -60,8 +63,14 @@ net.niebes.sudoku.replay     the site-facing layer: solvePuzzle, TraceReplayer, 
 
 `Technique` lives with the deductions, not with the implementations, so techniques depend on
 deductions and not the reverse. Tests mirror the package they cover, all under `lib/src/jvmTest`
-alongside the puzzle corpora; `lib/src/jsMain` holds only the ten-line `main` that publishes the
-facade to the page.
+alongside the puzzle corpora and `ExampleFinder` (the build-time tool behind `examples.js`);
+`lib/src/jsMain` holds only the ten-line `main` that publishes the facade to the page.
+
+The site itself (`web/site/`): `app.js` is the player and setup screens, `library.js` the
+technique library, `techniques.js` the lessons as data (prose, spotting advice, relatives, and
+diagram specs), `minigrid.js` renders those specs as grid fragments in the player's colour
+language. A technique's teaching lives in `techniques.js`; keep its entries in level order, and
+keep diagrams sound — they are read as claims, exactly like eliminations.
 
 ## Architecture
 

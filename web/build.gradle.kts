@@ -7,6 +7,8 @@ plugins {
 val site by tasks.registering(Copy::class) {
     from(layout.projectDirectory.dir("site"))
     from(project(":lib").tasks.named("jsBrowserDistribution"))
+    // Where each technique fires on the corpus, found by the solver at build time.
+    from(project(":lib").tasks.named("findTechniqueExamples"))
     into(layout.buildDirectory.dir("site"))
 }
 

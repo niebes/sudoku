@@ -41,8 +41,8 @@ footer { padding: 2rem 1.25rem 3rem; color: #5a5344; font-size: .9rem; }
   display: flex; align-items: center; justify-content: center;
   position: relative; font-size: 1.5rem; line-height: 1; cursor: default;
 }
-.cell:nth-child(9n) { border-right: none; }
-.cell:nth-child(n+73) { border-bottom: none; }
+.grid > .cell:nth-child(9n) { border-right: none; }
+.grid > .cell:nth-child(n+73) { border-bottom: none; }
 .cell.box-right { border-right: 2px solid var(--line-strong); }
 .cell.box-bottom { border-bottom: 2px solid var(--line-strong); }
 .cell.given { font-weight: bold; }
@@ -68,6 +68,47 @@ footer { padding: 2rem 1.25rem 3rem; color: #5a5344; font-size: .9rem; }
 .keypad { display: grid; grid-template-columns: repeat(10, 1fr); gap: .3rem; width: min(92vw, 480px); }
 .keypad button { padding: .45rem 0; font-size: 1.05rem; }
 #entry-status { min-height: 1.4em; margin: 0; }
+
+/* --- navigation --- */
+.site-nav { margin: 0 0 1.4rem; display: flex; gap: 1.4rem; font-size: .95rem; }
+.site-nav a { color: var(--ink); }
+.site-nav a:hover { color: var(--because); }
+
+/* --- mini teaching diagrams --- */
+:root { --mini-cell: 38px; }
+.mini-grid-wrap { overflow-x: auto; }
+.mini-grid { display: inline-grid; user-select: none; }
+.mini-label {
+  display: flex; align-items: center; justify-content: center;
+  font: .72rem/1 ui-monospace, 'SF Mono', Menlo, monospace; color: #6d6656;
+  padding: 0 .3rem .1rem 0;
+}
+.mini-cell {
+  width: var(--mini-cell); height: var(--mini-cell);
+  border: 1px solid var(--line); border-width: 0 1px 1px 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--card); font-size: 1.1rem; line-height: 1;
+}
+.mini-cell.box-right { border-right: 2px solid var(--line-strong); }
+.mini-cell.box-bottom { border-bottom: 2px solid var(--line-strong); }
+.mini-cell.edge-top { border-top: 2px solid var(--line-strong); }
+.mini-cell.edge-left { border-left: 2px solid var(--line-strong); }
+.mini-cell.edge-right { border-right: 2px solid var(--line-strong); }
+.mini-cell.edge-bottom { border-bottom: 2px solid var(--line-strong); }
+.mini-cell .marks { font-size: .56rem; }
+.tech-figure { margin: 1rem 0; }
+.tech-figure figcaption { font-size: .88rem; color: #5a5344; margin-top: .5rem; max-width: 44rem; }
+
+/* --- technique library --- */
+.library-title { font-size: 1.5rem; margin: .4rem 0 .6rem; }
+.library-intro { max-width: 46rem; color: #3f4856; }
+.library-level { font-size: 1.2rem; margin: 2.2rem 0 .9rem; border-bottom: 1px solid var(--line); padding-bottom: .3rem; }
+.tech-entry { max-width: 46rem; margin-bottom: 1.1rem; }
+.tech-entry h3 { margin: 0 0 .4rem; font-size: 1.1rem; }
+.tech-entry p { margin: .5rem 0; }
+.tech-note { font-style: italic; color: #5a5344; border-left: 3px solid var(--line); padding-left: .8rem; }
+.tech-related { font-size: .9rem; color: #5a5344; }
+#technique-more { font-size: .9rem; }
 
 /* --- setup layout --- */
 .setup-grid, .player-grid { display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-start; }

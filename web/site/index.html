@@ -10,6 +10,10 @@
 <header>
   <h1>Watch a Sudoku being solved</h1>
   <p class="tagline">Enter any puzzle: the answer, every deduction on the way to it, and the technique behind each one.</p>
+  <nav class="site-nav">
+    <a href="#" id="nav-solve">Solve a puzzle</a>
+    <a href="#techniques">Technique library</a>
+  </nav>
 </header>
 
 <main>
@@ -84,10 +88,24 @@
           <h3 id="technique-name"></h3>
           <p id="technique-level" class="level"></p>
           <p id="technique-text"></p>
-          <pre id="technique-example" hidden></pre>
+          <figure id="technique-diagram" class="tech-figure" hidden></figure>
+          <a id="technique-more" href="#techniques">More on this technique &rarr;</a>
         </div>
       </aside>
     </div>
+  </section>
+
+  <section id="library" hidden>
+    <h1 class="library-title">The techniques, cheapest first</h1>
+    <p class="library-intro">Everything this solver knows, in the order it tries it. Solving is a
+      cascade: apply the cheapest technique that fires, take the change it produces, and start
+      again from the top. Almost every deduction below exists to hand the grid back to the
+      singles, which are the only level that places digits. Diagrams use the player's colours:
+      <span class="chip chip-because"></span> the cells that prove it,
+      <span class="chip chip-target"></span> what changes, and struck-through red marks for what
+      goes. Where a technique fires on this site's own puzzle collection, <em>see it live</em>
+      solves that puzzle and jumps straight to the step.</p>
+    <div id="library-entries"></div>
   </section>
 </main>
 
@@ -97,7 +115,10 @@
 </footer>
 
 <script src="solver.js"></script>
+<script src="minigrid.js"></script>
 <script src="techniques.js"></script>
+<script src="examples.js"></script>
+<script src="library.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

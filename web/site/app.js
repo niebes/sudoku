@@ -132,17 +132,27 @@ let playing = null;
 
 function requestSolve() {
   const puzzle = $('compact').value.trim() || entryCompact();
+  solveAndPlay(puzzle, $('allow-guessing').checked, 0);
+}
+
+function solveAndPlay(puzzle, allowGuessing, jumpTo) {
   $('setup-error').hidden = true;
   let body;
   try {
-    body = sudokuSolver.solve(puzzle, $('allow-guessing').checked);
+    body = sudokuSolver.solve(puzzle, allowGuessing);
   } catch (failed) {
     return showSetupError('The solver failed on that input: ' + failed.message);
   }
   if (body.outcome === 'invalid' || !body.steps || body.steps.length === 0) {
     return showSetupError(body.message || 'That puzzle could not be solved.');
   }
-  startPlayer(body);
+  startPlayer(body, jumpTo);
+}
+
+// The library's "see it live": solve the curated corpus puzzle and land on the exact step where
+// the technique fires - the example is the real solver at work, not an illustration of it.
+function playExample(techniqueKey, example) {
+  solveAndPlay(example.puzzle, true, example.step);
 }
 
 function showSetupError(message) {
@@ -172,12 +182,11 @@ function computeStates(givens, steps) {
   return all;
 }
 
-function startPlayer(body) {
+function startPlayer(body, jumpTo) {
   solve = body;
   states = computeStates(body.givens, body.steps);
-  current = 0;
-  $('setup').hidden = true;
-  $('player').hidden = false;
+  current = Math.max(0, Math.min(body.steps.length, jumpTo || 0));
+  showSection('player');
   $('scrub').max = body.steps.length;
 
   const banner = $('banner');
@@ -289,9 +298,43 @@ function renderCards(step) {
     $('technique-name').textContent = lesson.name;
     $('technique-level').textContent = lesson.level;
     $('technique-text').textContent = lesson.text;
-    const example = $('technique-example');
-    example.hidden = !lesson.example;
-    if (lesson.example) example.textContent = lesson.example;
+    const diagram = $('technique-diagram');
+    diagram.innerHTML = '';
+    diagram.hidden = !lesson.diagram;
+    if (lesson.diagram) {
+      diagram.appendChild(renderMiniGrid(lesson.diagram));
+      if (lesson.caption) {
+        const caption = document.createElement('figcaption');
+        caption.textContent = lesson.caption;
+        diagram.appendChild(caption);
+      }
+    }
+    $('technique-more').href = '#technique/' + step.technique;
+  }
+}
+
+// ---------- sections and routing ----------
+
+// Three screens share the page: enter a puzzle, watch it solved, read up on the techniques.
+// Only the library is addressable (#techniques, #technique/KEY) - a solve is transient.
+function showSection(name) {
+  $('setup').hidden = name !== 'setup';
+  $('player').hidden = name !== 'player';
+  $('library').hidden = name !== 'library';
+}
+
+function handleHash() {
+  const hash = location.hash;
+  if (hash.startsWith('#technique/')) {
+    stopPlaying();
+    showSection('library');
+    showLibraryEntry(hash.slice('#technique/'.length));
+  } else if (hash === '#techniques') {
+    stopPlaying();
+    showSection('library');
+    window.scrollTo(0, 0);
+  } else if ($('player').hidden) {
+    showSection('setup');
   }
 }
 
@@ -349,9 +392,16 @@ function wire() {
   $('scrub').addEventListener('input', () => { stopPlaying(); goTo(Number($('scrub').value)); });
   $('btn-restart').addEventListener('click', () => {
     stopPlaying();
-    $('player').hidden = true;
-    $('setup').hidden = false;
+    if (location.hash) history.replaceState(null, '', location.pathname);
+    showSection('setup');
   });
+  $('nav-solve').addEventListener('click', (event) => {
+    event.preventDefault();
+    stopPlaying();
+    if (location.hash) history.replaceState(null, '', location.pathname);
+    showSection('setup');
+  });
+  window.addEventListener('hashchange', handleHash);
   document.addEventListener('keydown', (event) => {
     if ($('player').hidden || event.target.tagName === 'TEXTAREA') return;
     if (event.key === 'ArrowRight') { stopPlaying(); goTo(current + 1); event.preventDefault(); }
@@ -361,3 +411,5 @@ function wire() {
 }
 
 wire();
+buildLibrary();
+handleHash();
