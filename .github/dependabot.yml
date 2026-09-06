@@ -1,0 +1,15 @@
+# Raises PRs for dependency updates. Two ecosystems are all Dependabot can manage here:
+# kotlin-js-store/yarn.lock has no package.json (the Kotlin plugin generates it at build
+# time), so the JS toolchain pins update by bumping the Kotlin Gradle plugin instead.
+version: 2
+updates:
+  # Everything in gradle/libs.versions.toml and the build scripts, the Kotlin plugin included.
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+  # The action versions in .github/workflows.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
