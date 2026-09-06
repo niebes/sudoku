@@ -9,28 +9,30 @@ working tree.
 
 ## Build & test
 
-Gradle wrapper, three subprojects (Kotlin/JVM 2.1.20, Java toolchain 21, JUnit 5 + AssertJ):
-`lib` (the solver), `api` (Spring Boot, one `POST /solve` endpoint) and `web` (the site's static
-assets, packaged onto the classpath so `api` serves them — no build step of their own).
+Gradle wrapper, two subprojects (Kotlin 2.1.20, Java toolchain 21, JUnit 5 + AssertJ): `lib` — the
+solver, a Kotlin Multiplatform module with JVM and JS targets — and `web`, the static site that
+ships `lib` compiled to JavaScript. There is no backend.
 
 ```bash
-./gradlew build                 # compile + test
-./gradlew :lib:test             # solver tests only
-./gradlew :lib:test --tests 'net.niebes.sudoku.technique.XyWingEliminatorTest'      # one class
-./gradlew :lib:test --tests 'net.niebes.sudoku.SudokuSolverTest.round15'            # one test
+./gradlew build                 # compile all targets + test + assemble the site
+./gradlew :lib:jvmTest          # solver tests only
+./gradlew :lib:jvmTest --tests 'net.niebes.sudoku.technique.XyWingEliminatorTest'   # one class
+./gradlew :lib:jvmTest --tests 'net.niebes.sudoku.SudokuSolverTest.round15'         # one test
 ```
 
-**Read results from `lib/build/test-results/test/TEST-*.xml`, not the HTML report.** It is JUnit
+**Read results from `lib/build/test-results/jvmTest/TEST-*.xml`, not the HTML report.** It is JUnit
 XML: `<system-out>` holds the test's stdout and `<failure>` its message. Gradle's failure line links
 to the HTML, which is far more painful to parse.
 
 ## Run
 
-`./gradlew :api:bootRun` starts the API **and** the website in one process — `api` has `web` on its
-runtime classpath and Spring's default static resource handling serves it. Open
-<http://localhost:8080/> (default port, nothing configured). Static assets live in
-`web/src/main/resources/static/`; they are read from the classpath, so restart `bootRun` after
-editing them. `./gradlew :api:bootJar` builds the deployable single jar, `api/build/libs/api.jar`.
+`./gradlew :web:site` lays the deployable site out in `web/build/site/` — the static assets from
+`web/site/` plus `solver.js`, the webpack bundle `:lib`'s JS target compiles. Open its `index.html`
+directly (plain scripts, so `file://` works) or serve the directory with any static file server.
+The solver runs entirely in the page: `solver.js` registers `sudokuSolver.solve(puzzle,
+allowGuessing)` on the global scope (wired up in `lib`'s `jsMain`), and `app.js` calls it where it
+used to POST to an api. The result object's shape is rendered by `SolveResponseJson` and pinned by
+`SolveResponseJsonTest` — change either side only with the other.
 
 There is no lint/format task and no CI configuration. Configuration cache, parallel builds and the
 build cache are all enabled in `gradle.properties`, so a stale `.gradle/configuration-cache` is a
@@ -38,7 +40,10 @@ likely suspect for odd build behaviour.
 
 ## Layout
 
-One type per file. Packages, and the direction dependencies run:
+One type per file. Everything below lives in `lib/src/commonMain` — code shared by the JVM (tests)
+and JS (the site) targets, so **no JVM-only APIs**: `Integer.bitCount`, `putIfAbsent`,
+`sortedSetOf` and friends fail the JS compile; use the common-stdlib forms (`countOneBits()`,
+`getOrPut`, `distinct().sorted()`). Packages, and the direction dependencies run:
 
 ```
 net.niebes.sudoku            SudokuSolver, SolveResult and its three cases
@@ -46,15 +51,18 @@ net.niebes.sudoku.model      Field, Cell, Candidates, CellPosition, House, Inter
 net.niebes.sudoku.deduction  Technique, Deduction (Placement / Elimination), the listeners
 net.niebes.sudoku.technique  FieldProcessor, EliminationTechnique and fourteen techniques
 net.niebes.sudoku.io         parsers and writers
+net.niebes.sudoku.replay     the site-facing layer: solvePuzzle, TraceReplayer, Step, Explanations, JSON
 ```
 
 `Technique` lives with the deductions, not with the implementations, so techniques depend on
-deductions and not the reverse. Tests mirror the package they cover.
+deductions and not the reverse. Tests mirror the package they cover, all under `lib/src/jvmTest`
+alongside the puzzle corpora; `lib/src/jsMain` holds only the ten-line `main` that publishes the
+facade to the page.
 
 ## Architecture
 
-A Sudoku solver: constraint propagation with backtracking search underneath it. `lib` has no `main`
-of its own — it is exercised through its tests and through `api`'s `SudokuApiApplication`.
+A Sudoku solver: constraint propagation with backtracking search underneath it, exercised through
+its JVM tests and through the site, which calls `solvePuzzle` in the browser.
 
 **Immutable model.** `Cell` is a sealed interface of `SolvedCell` (a `value`) and `UnsolvedCell` (its
 remaining `Candidates`); both are data classes, and that generated equality is load-bearing — it

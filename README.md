@@ -4,55 +4,53 @@ A Sudoku solver that shows its work: constraint propagation over fourteen human 
 techniques, with backtracking search underneath. The website lets you enter a puzzle and
 watch it solved step by step, each step named after the technique that found it.
 
-Three Gradle subprojects:
+The solver runs entirely in the browser — the Kotlin library is compiled to JavaScript,
+so the site is static files with no backend. Two Gradle subprojects:
 
-- `lib` — the solver itself, a plain Kotlin/JVM library.
-- `api` — a Spring Boot app with one endpoint, `POST /solve`.
-- `web` — the site: static assets only, packaged onto the classpath so `api` serves them.
+- `lib` — the solver, a Kotlin Multiplatform module. The JVM target carries the test
+  suite; the JS target compiles the same code into the script the site ships.
+- `web` — the site: HTML, CSS and the player, joined at build time by the compiled solver.
 
-## Running the API and the website
-
-One process serves both. Start it with:
-
-```bash
-./gradlew :api:bootRun
-```
-
-then open <http://localhost:8080/>. The port is Spring's default 8080; there is no
-custom port configuration. The site is served from the classpath, so after editing files
-under `web/src/main/resources/static/` restart `bootRun` to pick the changes up.
-
-To run from a jar instead:
+## Running the website
 
 ```bash
-./gradlew :api:bootJar
-java -jar api/build/libs/api.jar
+./gradlew :web:site
 ```
 
-## The API
-
-`POST /solve` takes the 81-character compact puzzle format (digits for givens, `.` for
-empty cells):
+lays the finished site out in `web/build/site/`. Open its `index.html` straight from the
+file system — the site is plain scripts, so `file://` works — or serve the directory with
+any static file server:
 
 ```bash
-curl -s http://localhost:8080/solve \
-  -H 'Content-Type: application/json' \
-  -d '{"puzzle": "52...6.........7.13...........4..8..6......5...........418.........3..2...87.....", "allowGuessing": true}'
+python3 -m http.server --directory web/build/site
 ```
 
-The response carries the solution and the step-by-step reasoning that reaches it. With
-`allowGuessing: false` the solver only reports what the techniques can honestly deduce
-and stalls rather than guess.
+To deploy, copy `web/build/site/` to any static host.
+
+## Using the solver from the page
+
+`solver.js` registers a `sudokuSolver` global. Puzzles use the 81-character compact
+format (digits for givens, `.` for empty cells):
+
+```js
+const result = sudokuSolver.solve(
+  '52...6.........7.13...........4..8..6......5...........418.........3..2...87.....',
+  true // allowGuessing: false stops at what the techniques can honestly deduce
+);
+result.outcome;      // 'solved' | 'stalled' | 'invalid'
+result.solution;     // the completed grid, compact format
+result.steps;        // the reasoning, one technique-named step at a time
+```
 
 ## Build and test
 
 ```bash
-./gradlew build        # compile + test everything
-./gradlew :lib:test    # solver tests only
+./gradlew build             # compile all targets, run the tests, assemble the site
+./gradlew :lib:jvmTest      # solver tests only
 ```
 
 Requires nothing installed beyond a JDK the toolchain resolver can find — the build
-targets Java 21 and downloads it if needed.
+targets Java 21 and downloads it (and the Node.js the JS target needs) if necessary.
 
 `docs/solving-techniques.md` is a standalone reference for every technique the solver
 implements, with worked examples.
