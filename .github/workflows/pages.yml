@@ -26,7 +26,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       # build runs the whole test suite and assembles the site; only a green solver deploys.
       - run: ./gradlew build
       # enablement turns Pages on for the repository on the first run, so no manual
